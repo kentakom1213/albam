@@ -3,6 +3,7 @@ package scanner
 import (
 	"io/fs"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 )
@@ -60,6 +61,14 @@ func Scan(root string) ([]AssetFile, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// sort files
+	sort.Slice(
+		files,
+		func(i, j int) bool {
+			return files[i].RelPath <= files[j].RelPath
+		},
+	)
 
 	return files, nil
 }
