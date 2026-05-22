@@ -1,0 +1,11 @@
+packages:
+  - "."
+
+minimumReleaseAge: 10080
+minimumReleaseAgeStrict: true
+onlyBuiltDependencies: []
+
+engineStrict: true
+saveExact: true
+autoInstallPeers: false
+strictPeerDependencies: true

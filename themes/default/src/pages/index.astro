@@ -1,0 +1,53 @@
+---
+import Layout from "../components/Layout.astro";
+import { albumHref } from "../lib";
+import type { Album } from "../lib";
+
+const albums: Album[] = [
+  {
+    id: "1",
+    title: "Kyoto Trip",
+    slug: "trip-kyoto",
+    path: "trip-kyoto",
+    description: "Spring photos from Kyoto",
+  },
+  {
+    id: "2",
+    title: "Family",
+    slug: "family",
+    path: "family",
+    description: "Private family album",
+  },
+  {
+    id: "3",
+    title: "Daily Snapshots",
+    slug: "daily",
+    path: "daily",
+    description: "Small memories from everyday life",
+  },
+];
+---
+
+<Layout title="Albam">
+  <section class="hero">
+    <p class="eyebrow">Self-hosted photo album</p>
+    <h1>Albums</h1>
+    <p class="hero-description">
+      Browse photos organized by directory structure.
+    </p>
+  </section>
+
+  <section class="album-grid" aria-label="Album list">
+    {albums.map((album) => (
+      <a class="album-card" href={albumHref(album)}>
+        <div class="album-cover" aria-hidden="true">
+          <span>{album.title[0]}</span>
+        </div>
+        <div class="album-body">
+          <h2>{album.title}</h2>
+          {album.description && <p>{album.description}</p>}
+        </div>
+      </a>
+    ))}
+  </section>
+</Layout>
