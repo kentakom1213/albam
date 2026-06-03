@@ -1,7 +1,3 @@
 # build artifacts
 /albam
 /bin/
-
-# local data
-/data/
-/albums/

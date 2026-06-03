@@ -1,0 +1,20 @@
+title = "Example Albums"
+
+[server]
+host = "127.0.0.1"
+port = 8080
+
+[media]
+source_dir = "albums"
+cache_dir = ".albam/cache"
+allow_original_download = false
+
+[database]
+path = ".albam/db.sqlite"
+
+[build]
+out_dir = ".aubam/public"
+
+[theme]
+name = "default"
+dir = "themes/default"
