@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/kentakom1213/go-webapp-tutorial/internal/model"
-	"github.com/kentakom1213/go-webapp-tutorial/internal/scanner"
+	"github.com/kentakom1213/albam/internal/model"
+	"github.com/kentakom1213/albam/internal/scanner"
 )
 
 type Library struct {
@@ -32,7 +32,7 @@ func BuildLibrary(files []scanner.AssetFile) (*Library, error) {
 	for albumPath := range albumPaths {
 		albums = append(albums, model.Album{
 			Path:  albumPath,
-			Slug:  slugFromPath(albumPath),
+			Slug:  "",
 			Title: titleFromPath(albumPath),
 		})
 	}
@@ -113,14 +113,6 @@ func parentAlbumPath(albumPath string) (string, bool) {
 	}
 
 	return parent, true
-}
-
-func slugFromPath(albumPath string) string {
-	if albumPath == "" {
-		return "root"
-	}
-
-	return path.Base(albumPath)
 }
 
 func titleFromPath(albumPath string) string {

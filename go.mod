@@ -1,4 +1,4 @@
-module github.com/kentakom1213/go-webapp-tutorial
+module github.com/kentakom1213/albam
 
 go 1.26.2
 
