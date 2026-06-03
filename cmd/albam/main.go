@@ -6,6 +6,7 @@ import (
 
 	"github.com/kentakom1213/go-webapp-tutorial/internal/indexer"
 	"github.com/kentakom1213/go-webapp-tutorial/internal/scanner"
+	"github.com/kentakom1213/go-webapp-tutorial/internal/storage"
 )
 
 func main() {
@@ -19,6 +20,11 @@ func main() {
 	switch cmd {
 	case "scan":
 		if err := runScan(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+	case "index":
+		if err := runIndex(os.Args[2:]); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
@@ -69,5 +75,44 @@ func runScan(args []string) error {
 		)
 	}
 
+	return nil
+}
+
+func runIndex(args []string) error {
+	if len(args) != 1 {
+		return fmt.Errorf("usage: albam index <dir>")
+	}
+
+	root := args[0]
+
+	files, err := scanner.Scan(root)
+	if err != nil {
+		return err
+	}
+
+	library, err := indexer.BuildLibrary(files)
+	if err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll("data", 0755); err != nil {
+		return err
+	}
+
+	store, err := storage.Open("data/albam.db")
+	if err != nil {
+		return err
+	}
+	defer store.Close()
+
+	if err := store.Migrate(); err != nil {
+		return err
+	}
+
+	if err := store.SaveLibrary(library); err != nil {
+		return err
+	}
+
+	fmt.Printf("indexed %d albums and %d assets\n", len(library.Albums), len(library.Assets))
 	return nil
 }
