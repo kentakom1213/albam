@@ -5,19 +5,22 @@ import Header from "../../components/Header.astro";
 import ImagePlaceholder from "../../components/ImagePlaceholder.astro";
 import Layout from "../../components/Layout.astro";
 import PhotoCard from "../../components/PhotoCard.astro";
-import { albums, photos } from "../../data/mock";
+import { formatCompactDate, formatCompactMonth, getAlbum, getAlbumPhotos, getAlbums } from "../../lib/api";
 
-export function getStaticPaths() {
+export async function getStaticPaths() {
+  const albums = await getAlbums();
+
   return albums.map((album) => ({
     params: { albumId: album.id },
-    props: { album },
   }));
 }
 
-const { album } = Astro.props;
-const albumPhotos = photos.filter((photo) => photo.albumId === album.id);
-const visibleDate = album.createdAt.replace("May 18, 2026", "2026.05.18");
-const shortDate = album.createdAt.replace("May 18, 2026", "2026.05");
+const { albumId } = Astro.params;
+const album = await getAlbum(albumId as string);
+const albumPhotos = await getAlbumPhotos(album.id);
+const visibleDate = formatCompactDate(album.createdAt);
+const shortDate = formatCompactMonth(album.createdAt);
+const coverPhotos = albumPhotos.slice(0, 3);
 ---
 
 <Layout title={`albam | ${album.title}`}>
@@ -27,18 +30,18 @@ const shortDate = album.createdAt.replace("May 18, 2026", "2026.05");
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href="/">Albums</a>
       <span>/</span>
-      <span>{album.tags.includes("travel") ? "Travel" : album.kind.replace(" ALBUM", "")}</span>
+      <span>{album.kind.replace(" ALBUM", "")}</span>
       <strong>{album.title}</strong>
     </nav>
 
     <section class="hero-card panel" aria-labelledby="album-title">
       <div class="cover-collage">
         <div class="cover-main">
-          <ImagePlaceholder tone={album.tone} alt={`${album.title} cover`} collage />
+          <ImagePlaceholder src={album.coverSrc ?? coverPhotos[0]?.previewSrc ?? coverPhotos[0]?.src} tone={album.tone} alt={`${album.title} cover`} collage />
         </div>
         <div class="cover-side">
-          <ImagePlaceholder tone="peach" alt="" />
-          <ImagePlaceholder tone="mint" alt="" />
+          <ImagePlaceholder src={coverPhotos[1]?.src} tone="peach" alt="" />
+          <ImagePlaceholder src={coverPhotos[2]?.src} tone="mint" alt="" />
         </div>
       </div>
 
@@ -46,7 +49,7 @@ const shortDate = album.createdAt.replace("May 18, 2026", "2026.05");
         <p class="eyebrow">{album.kind}</p>
         <h1 id="album-title" class="page-title">{album.title}</h1>
         <p class="lead">{album.description}</p>
-        <div class="meta-chips" aria-label="Album metadata">
+        <div class="meta-chips" style={`--short-date: "${shortDate}"`} aria-label="Album metadata">
           <Chip label={`${album.photoCount} photos`} active />
           <Chip label={visibleDate} />
           <Chip label={album.visibility} />
@@ -359,7 +362,7 @@ const shortDate = album.createdAt.replace("May 18, 2026", "2026.05");
 
     .meta-chips :global(.chip:nth-child(2))::before {
       font-size: 14px;
-      content: "2026.05";
+      content: var(--short-date);
     }
 
     .actions {

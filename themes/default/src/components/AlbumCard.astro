@@ -1,6 +1,6 @@
 ---
 import ImagePlaceholder from "./ImagePlaceholder.astro";
-import type { Album } from "../data/mock";
+import type { Album } from "../lib/api";
 
 type Props = {
   album: Album;
@@ -11,7 +11,7 @@ const { album } = Astro.props;
 
 <a class="album-card" href={`/albums/${album.id}/`}>
   <div class="album-image">
-    <ImagePlaceholder tone={album.tone} alt={`${album.title} cover`} />
+    <ImagePlaceholder src={album.coverSrc} tone={album.tone} alt={`${album.title} cover`} />
   </div>
   <div class="album-meta">
     <div>

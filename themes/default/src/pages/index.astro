@@ -3,9 +3,16 @@ import AlbumCard from "../components/AlbumCard.astro";
 import Chip from "../components/Chip.astro";
 import Header from "../components/Header.astro";
 import Layout from "../components/Layout.astro";
-import { albums } from "../data/mock";
+import { getAlbums, getTags } from "../lib/api";
 
-const totalPhotos = albums.reduce((sum, album) => sum + album.photoCount, 0) + 1000;
+const albums = await getAlbums();
+const tags = await getTags().catch(() => [
+  { id: "favorites", name: "Favorites" },
+  { id: "travel", name: "Travel" },
+  { id: "daily", name: "Daily" },
+  { id: "family", name: "Family" },
+]);
+const totalPhotos = albums.reduce((sum, album) => sum + album.photoCount, 0);
 ---
 
 <Layout title="albam | Your Albums">
@@ -27,10 +34,7 @@ const totalPhotos = albums.reduce((sum, album) => sum + album.photoCount, 0) + 1
         </p>
         <div class="chip-row" aria-label="Album filters">
           <Chip label="All" active />
-          <Chip label="Favorites" />
-          <Chip label="Travel" />
-          <Chip label="Daily" />
-          <Chip label="Family" />
+          {tags.slice(0, 4).map((tag) => <Chip label={tag.name} />)}
         </div>
       </div>
 
