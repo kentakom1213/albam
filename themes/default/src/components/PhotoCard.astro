@@ -50,6 +50,13 @@ const { photo, selected = false } = Astro.props;
     font-weight: 500;
   }
 
+  .photo-title span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .dot {
     flex: 0 0 auto;
   }
