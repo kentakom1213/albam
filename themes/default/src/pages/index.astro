@@ -1,0 +1,187 @@
+---
+import AlbumCard from "../components/AlbumCard.astro";
+import Chip from "../components/Chip.astro";
+import Header from "../components/Header.astro";
+import Layout from "../components/Layout.astro";
+import { albums } from "../data/mock";
+
+const totalPhotos = albums.reduce((sum, album) => sum + album.photoCount, 0) + 1000;
+---
+
+<Layout title="albam | Your Albums">
+  <Header />
+
+  <main class="page-shell home-page">
+    <section class="home-hero" aria-labelledby="home-title">
+      <div class="hero-copy">
+        <p class="eyebrow desktop-eyebrow">SELF-HOSTED PHOTO ALBUM</p>
+        <p class="eyebrow mobile-eyebrow">PHOTO ALBUM</p>
+        <h1 id="home-title" class="page-title">Your Albums</h1>
+        <p class="lead desktop-lead">
+          写真をディレクトリやタグごとに，シンプルで可愛いグ<br />
+          リッドとして眺められるアルバムです。
+        </p>
+        <p class="lead mobile-lead">
+          白と黒をベースに，写真が主役になる<br />
+          小さなアルバム UI。
+        </p>
+        <div class="chip-row" aria-label="Album filters">
+          <Chip label="All" active />
+          <Chip label="Favorites" />
+          <Chip label="Travel" />
+          <Chip label="Daily" />
+          <Chip label="Family" />
+        </div>
+      </div>
+
+      <aside class="stats-card" aria-label="Photo sync status">
+        <div>
+          <p>Photos</p>
+          <strong>{totalPhotos.toLocaleString("en-US")}</strong>
+          <span>Synced locally</span>
+        </div>
+        <span class="stats-mark" aria-hidden="true"></span>
+      </aside>
+    </section>
+
+    <section class="album-grid" aria-label="Albums">
+      {albums.map((album) => <AlbumCard album={album} />)}
+    </section>
+  </main>
+</Layout>
+
+<style>
+  .home-page {
+    padding: 72px 0 110px;
+  }
+
+  .home-hero {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 48px;
+    margin-bottom: 32px;
+  }
+
+  .mobile-eyebrow,
+  .mobile-lead {
+    display: none;
+  }
+
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 7px;
+  }
+
+  .stats-card {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    width: 276px;
+    min-height: 132px;
+    margin-top: 0;
+    padding: 23px 23px;
+    border: 1px solid var(--theme-border);
+    border-radius: 22px;
+    background: var(--theme-surface);
+  }
+
+  .stats-card p,
+  .stats-card span {
+    margin: 0;
+    color: var(--theme-muted);
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  .stats-card strong {
+    display: block;
+    margin-top: 9px;
+    color: var(--theme-text);
+    font-size: 42px;
+    font-weight: 900;
+    line-height: 0.9;
+  }
+
+  .stats-mark {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    background: var(--theme-current-accent);
+  }
+
+  .album-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 20px;
+  }
+
+  @media (max-width: 1120px) {
+    .album-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 900px) {
+    .home-page {
+      padding-top: 48px;
+    }
+
+    .home-hero {
+      display: block;
+    }
+
+    .stats-card {
+      display: none;
+    }
+
+    .album-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .home-page {
+      padding: 37px 0 0;
+    }
+
+    .desktop-eyebrow,
+    .desktop-lead {
+      display: none;
+    }
+
+    .mobile-eyebrow,
+    .mobile-lead {
+      display: block;
+    }
+
+    .chip-row {
+      flex-wrap: nowrap;
+      gap: 8px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+
+    .chip-row :global(.chip:nth-child(n + 4)) {
+      display: none;
+    }
+
+    .chip-row :global(.chip:nth-child(2)) {
+      font-size: 0;
+    }
+
+    .chip-row :global(.chip:nth-child(2))::before {
+      font-size: 14px;
+      content: "Fav";
+    }
+
+    .album-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px 14px;
+      margin-top: 20px;
+      padding-bottom: 24px;
+    }
+  }
+</style>

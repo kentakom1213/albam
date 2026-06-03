@@ -1,0 +1,38 @@
+---
+type Props = {
+  label: string;
+  href?: string;
+  primary?: boolean;
+};
+
+const { label, href, primary = false } = Astro.props;
+const Tag = href ? "a" : "button";
+---
+
+<Tag class:list={["button", { primary }]} href={href} type={href ? undefined : "button"}>
+  {label}
+</Tag>
+
+<style>
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 24px;
+    border: 1px solid var(--theme-border);
+    border-radius: var(--radius-pill);
+    background: var(--theme-surface);
+    color: var(--theme-text);
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .button.primary {
+    border-color: var(--theme-text);
+    background: var(--theme-text);
+    color: var(--theme-surface);
+  }
+</style>

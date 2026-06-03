@@ -1,0 +1,431 @@
+---
+import Button from "../../components/Button.astro";
+import Chip from "../../components/Chip.astro";
+import Header from "../../components/Header.astro";
+import ImagePlaceholder from "../../components/ImagePlaceholder.astro";
+import Layout from "../../components/Layout.astro";
+import PhotoCard from "../../components/PhotoCard.astro";
+import { albums, photos } from "../../data/mock";
+
+export function getStaticPaths() {
+  return albums.map((album) => ({
+    params: { albumId: album.id },
+    props: { album },
+  }));
+}
+
+const { album } = Astro.props;
+const albumPhotos = photos.filter((photo) => photo.albumId === album.id);
+const visibleDate = album.createdAt.replace("May 18, 2026", "2026.05.18");
+const shortDate = album.createdAt.replace("May 18, 2026", "2026.05");
+---
+
+<Layout title={`albam | ${album.title}`}>
+  <Header backHref="/" />
+
+  <main class="page-shell detail-page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/">Albums</a>
+      <span>/</span>
+      <span>{album.tags.includes("travel") ? "Travel" : album.kind.replace(" ALBUM", "")}</span>
+      <strong>{album.title}</strong>
+    </nav>
+
+    <section class="hero-card panel" aria-labelledby="album-title">
+      <div class="cover-collage">
+        <div class="cover-main">
+          <ImagePlaceholder tone={album.tone} alt={`${album.title} cover`} collage />
+        </div>
+        <div class="cover-side">
+          <ImagePlaceholder tone="peach" alt="" />
+          <ImagePlaceholder tone="mint" alt="" />
+        </div>
+      </div>
+
+      <div class="hero-content">
+        <p class="eyebrow">{album.kind}</p>
+        <h1 id="album-title" class="page-title">{album.title}</h1>
+        <p class="lead">{album.description}</p>
+        <div class="meta-chips" aria-label="Album metadata">
+          <Chip label={`${album.photoCount} photos`} active />
+          <Chip label={visibleDate} />
+          <Chip label={album.visibility} />
+        </div>
+        <div class="actions">
+          <Button label="Share" primary />
+          <Button label="Download" />
+          <Button label="Edit album" />
+        </div>
+      </div>
+    </section>
+
+    <div class="content-grid">
+      <section class="photos-section" aria-labelledby="photos-title">
+        <div class="photos-toolbar">
+          <h2 id="photos-title">Photos</h2>
+          <div class="toolbar-chips" aria-label="Photo filters">
+            <Chip label="All" active small />
+            <Chip label="Favorites" small />
+            <Chip label="Newest" small />
+          </div>
+        </div>
+
+        <div class="photo-grid">
+          {albumPhotos.map((photo, index) => <PhotoCard photo={photo} selected={index === 1} />)}
+        </div>
+      </section>
+
+      <aside class="info-panel panel" aria-labelledby="info-title">
+        <h2 id="info-title">Album info</h2>
+        <dl>
+          <div>
+            <dt>Photos</dt>
+            <dd>{album.photoCount}</dd>
+          </div>
+          <div>
+            <dt>Size</dt>
+            <dd>{album.size}</dd>
+          </div>
+          <div>
+            <dt>Created</dt>
+            <dd>{album.createdAt}</dd>
+          </div>
+          <div>
+            <dt>Updated</dt>
+            <dd>{album.updatedAt}</dd>
+          </div>
+        </dl>
+        <h3>Tags</h3>
+        <div class="tag-list">
+          {album.tags.map((tag, index) => <Chip label={tag} active={index === 0} small />)}
+        </div>
+        <p class="info-note">
+          写真をクリックするとライトボックス，複数選択すると一括操作の想定です。
+        </p>
+      </aside>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .detail-page {
+    padding: 46px 0 110px;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 18px;
+    color: var(--theme-muted);
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .breadcrumb strong {
+    color: var(--theme-text);
+  }
+
+  .hero-card {
+    display: grid;
+    grid-template-columns: minmax(460px, 640px) 1fr;
+    gap: 46px;
+    align-items: center;
+    min-height: 336px;
+    padding: 20px;
+  }
+
+  .cover-collage {
+    display: grid;
+    grid-template-columns: 1fr 180px;
+    gap: 16px;
+    height: 292px;
+  }
+
+  .cover-main,
+  .cover-side > * {
+    min-width: 0;
+  }
+
+  .cover-side {
+    display: grid;
+    gap: 20px;
+  }
+
+  .hero-content {
+    padding-right: 32px;
+  }
+
+  .hero-content .page-title {
+    margin: 18px 0 13px;
+    font-size: 64px;
+  }
+
+  .hero-content .lead {
+    max-width: 580px;
+  }
+
+  .meta-chips,
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .meta-chips {
+    margin-top: 6px;
+  }
+
+  .actions {
+    margin-top: 20px;
+  }
+
+  .content-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 30px;
+    margin-top: 50px;
+  }
+
+  .photos-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 66px;
+    margin-bottom: 32px;
+    padding: 0 23px;
+    border: 1px solid var(--theme-border);
+    border-radius: 20px;
+    background: var(--theme-surface);
+  }
+
+  .photos-toolbar h2,
+  .info-panel h2 {
+    margin: 0;
+    color: var(--theme-text);
+    font-size: 27px;
+    font-weight: 900;
+  }
+
+  .toolbar-chips {
+    display: flex;
+    gap: 10px;
+  }
+
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px 18px;
+  }
+
+  .info-panel {
+    align-self: start;
+    padding: 24px;
+    box-shadow: none;
+  }
+
+  dl {
+    display: grid;
+    gap: 30px;
+    margin: 25px 0 44px;
+  }
+
+  dl div {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 20px;
+  }
+
+  dt {
+    color: var(--theme-muted);
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  dd {
+    margin: 0;
+    color: var(--theme-text);
+    font-size: 15px;
+    font-weight: 800;
+  }
+
+  h3 {
+    margin: 0 0 14px;
+    color: var(--theme-text);
+    font-size: 18px;
+    font-weight: 900;
+  }
+
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--theme-border);
+  }
+
+  .info-note {
+    margin: 22px 0 0;
+    color: var(--theme-muted);
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.7;
+  }
+
+  @media (max-width: 1120px) {
+    .hero-card {
+      grid-template-columns: 1fr;
+    }
+
+    .content-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .info-panel {
+      display: none;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .photo-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .detail-page {
+      padding: 29px 0 0;
+    }
+
+    .breadcrumb {
+      margin-bottom: 13px;
+      font-size: 15px;
+    }
+
+    .breadcrumb strong {
+      display: none;
+    }
+
+    .hero-card {
+      display: flex;
+      flex-direction: column;
+      gap: 31px;
+      min-height: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .cover-collage {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .cover-main {
+      aspect-ratio: 346 / 209;
+    }
+
+    .cover-side {
+      display: none;
+    }
+
+    .hero-content {
+      width: 100%;
+      padding: 0;
+    }
+
+    .hero-content .page-title {
+      margin: 13px 0 13px;
+      font-size: 44px;
+    }
+
+    .hero-content .lead {
+      font-size: 19px;
+      line-height: 1.65;
+    }
+
+    .meta-chips {
+      flex-wrap: nowrap;
+      gap: 8px;
+      margin-top: 13px;
+    }
+
+    .meta-chips :global(.chip:nth-child(2)) {
+      font-size: 0;
+    }
+
+    .meta-chips :global(.chip:nth-child(2))::before {
+      font-size: 14px;
+      content: "2026.05";
+    }
+
+    .actions {
+      flex-wrap: nowrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .actions :global(.button) {
+      min-height: 40px;
+      padding: 0 22px;
+    }
+
+    .actions :global(.button:nth-child(2)) {
+      order: 3;
+    }
+
+    .actions :global(.button:nth-child(3)) {
+      order: 2;
+      font-size: 0;
+    }
+
+    .actions :global(.button:nth-child(3))::before {
+      font-size: 14px;
+      content: "Edit";
+    }
+
+    .content-grid {
+      display: block;
+      margin-top: 32px;
+    }
+
+    .photos-toolbar {
+      min-height: 42px;
+      margin-bottom: 21px;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .photos-toolbar h2 {
+      font-size: 29px;
+    }
+
+    .toolbar-chips {
+      gap: 8px;
+    }
+
+    .toolbar-chips :global(.chip:nth-child(n + 3)) {
+      display: none;
+    }
+
+    .toolbar-chips :global(.chip:nth-child(2)) {
+      font-size: 0;
+    }
+
+    .toolbar-chips :global(.chip:nth-child(2))::before {
+      font-size: 13px;
+      content: "Fav";
+    }
+
+    .photo-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      padding-bottom: 24px;
+    }
+  }
+</style>
