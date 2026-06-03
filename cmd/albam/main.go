@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
+	"github.com/kentakom1213/go-webapp-tutorial/internal/config"
 	"github.com/kentakom1213/go-webapp-tutorial/internal/indexer"
 	"github.com/kentakom1213/go-webapp-tutorial/internal/scanner"
 	"github.com/kentakom1213/go-webapp-tutorial/internal/storage"
@@ -35,11 +37,17 @@ func main() {
 }
 
 func runScan(args []string) error {
-	if len(args) != 1 {
-		return fmt.Errorf("usage: albam scan <dir>")
+	cfg, err := config.Load("albam.toml")
+	if err != nil {
+		return err
 	}
 
-	root := args[0]
+	root := cfg.Media.SourceDir
+	if len(args) == 1 {
+		root = args[0]
+	} else if len(args) > 1 {
+		return fmt.Errorf("usage: albam scan [dir]")
+	}
 
 	files, err := scanner.Scan(root)
 	if err != nil {
@@ -79,11 +87,17 @@ func runScan(args []string) error {
 }
 
 func runIndex(args []string) error {
-	if len(args) != 1 {
-		return fmt.Errorf("usage: albam index <dir>")
+	cfg, err := config.Load("albam.toml")
+	if err != nil {
+		return err
 	}
 
-	root := args[0]
+	root := cfg.Media.SourceDir
+	if len(args) == 1 {
+		root = args[0]
+	} else if len(args) > 1 {
+		return fmt.Errorf("usage: albam index [dir]")
+	}
 
 	files, err := scanner.Scan(root)
 	if err != nil {
@@ -95,11 +109,11 @@ func runIndex(args []string) error {
 		return err
 	}
 
-	if err := os.MkdirAll("data", 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(cfg.Database.Path), 0755); err != nil {
 		return err
 	}
 
-	store, err := storage.Open("data/albam.db")
+	store, err := storage.Open(cfg.Database.Path)
 	if err != nil {
 		return err
 	}
