@@ -7,7 +7,7 @@ const theme = getThemeConfig();
 ---
 
 <Layout title={`${theme.siteTitle} | Album`}>
-  <Header backHref="/" />
+  <Header />
 
   <main class="page-shell detail-page" data-site-title={theme.siteTitle}>
     <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -17,71 +17,33 @@ const theme = getThemeConfig();
       <strong id="breadcrumb-title">Loading</strong>
     </nav>
 
-    <section class="hero-card panel" aria-labelledby="album-title">
-      <div class="cover-collage">
-        <div class="cover-main" id="cover-main"></div>
-        <div class="cover-side">
-          <div id="cover-side-one"></div>
-          <div id="cover-side-two"></div>
-        </div>
-      </div>
-
+    <section class="album-hero" aria-labelledby="album-title">
       <div class="hero-content">
-        <p class="eyebrow" id="album-kind">PHOTO ALBUM</p>
         <h1 id="album-title" class="page-title">Loading</h1>
         <p class="lead" id="album-description"></p>
         <div class="meta-chips" id="meta-chips" aria-label="Album metadata"></div>
-        <div class="actions">
-          <button class="button primary" type="button">Share</button>
-          <button class="button" type="button">Download</button>
-          <button class="button" type="button">Edit album</button>
-        </div>
+      </div>
+
+      <div class="actions">
+        <button class="button primary" type="button">Share</button>
+        <button class="help-button" type="button" aria-label="Help">?</button>
       </div>
     </section>
 
-    <div class="content-grid">
-      <section class="photos-section" aria-labelledby="photos-title">
-        <div class="photos-toolbar">
-          <h2 id="photos-title">Photos</h2>
-          <div class="toolbar-chips" aria-label="Photo filters">
-            <span class="chip active small">All</span>
-            <span class="chip small">Favorites</span>
-            <span class="chip small">Newest</span>
-          </div>
+    <section class="photos-section" aria-labelledby="photos-title">
+      <div class="photos-toolbar">
+        <h2 id="photos-title">Photos</h2>
+        <div class="toolbar-chips" aria-label="Photo filters">
+          <span class="chip active small">All</span>
+          <span class="chip small">Favorites</span>
+          <span class="chip small">Newest</span>
         </div>
+      </div>
 
-        <div class="photo-grid" id="photo-grid">
-          <p class="load-state">Loading photos...</p>
-        </div>
-      </section>
-
-      <aside class="info-panel panel" aria-labelledby="info-title">
-        <h2 id="info-title">Album info</h2>
-        <dl>
-          <div>
-            <dt>Photos</dt>
-            <dd id="info-photos">-</dd>
-          </div>
-          <div>
-            <dt>Size</dt>
-            <dd id="info-size">-</dd>
-          </div>
-          <div>
-            <dt>Created</dt>
-            <dd id="info-created">-</dd>
-          </div>
-          <div>
-            <dt>Updated</dt>
-            <dd id="info-updated">-</dd>
-          </div>
-        </dl>
-        <h3>Tags</h3>
-        <div class="tag-list" id="tag-list"></div>
-        <p class="info-note">
-          写真をクリックするとライトボックス，複数選択すると一括操作の想定です。
-        </p>
-      </aside>
-    </div>
+      <div class="photo-grid" id="photo-grid">
+        <p class="load-state">Loading photos...</p>
+      </div>
+    </section>
   </main>
 </Layout>
 
@@ -167,46 +129,21 @@ const theme = getThemeConfig();
       const [album, photos] = await Promise.all([getAlbum(albumId), getAlbumPhotos(albumId)]);
       const visibleDate = formatCompactDate(album.createdAt);
       const shortDate = formatCompactMonth(album.createdAt);
-      const coverPhotos = photos.slice(0, 3);
 
       document.title = `${siteTitle} | ${album.title}`;
       setText("#breadcrumb-kind", album.kind.replace(" ALBUM", ""));
       setText("#breadcrumb-title", album.title);
-      setText("#album-kind", album.kind);
       setText("#album-title", album.title);
       setText("#album-description", album.description);
-      setText("#info-photos", album.photoCount.toLocaleString("en-US"));
-      setText("#info-size", album.size);
-      setText("#info-created", album.createdAt);
-      setText("#info-updated", album.updatedAt);
 
-      const coverMain = document.querySelector<HTMLElement>("#cover-main");
-      const coverSideOne = document.querySelector<HTMLElement>("#cover-side-one");
-      const coverSideTwo = document.querySelector<HTMLElement>("#cover-side-two");
       const metaChips = document.querySelector<HTMLElement>("#meta-chips");
-      const tagList = document.querySelector<HTMLElement>("#tag-list");
 
-      if (coverMain) {
-        coverMain.innerHTML = imageHTML(album.coverSrc ?? coverPhotos[0]?.previewSrc ?? coverPhotos[0]?.src, album.tone, `${album.title} cover`, true);
-      }
-      if (coverSideOne) {
-        coverSideOne.innerHTML = imageHTML(coverPhotos[1]?.src, "peach", "");
-      }
-      if (coverSideTwo) {
-        coverSideTwo.innerHTML = imageHTML(coverPhotos[2]?.src, "mint", "");
-      }
       if (metaChips) {
         metaChips.style.setProperty("--short-date", `"${shortDate}"`);
         metaChips.innerHTML = `
           <span class="chip active">${album.photoCount.toLocaleString("en-US")} photos</span>
           <span class="chip">${escapeHTML(visibleDate)}</span>
-          <span class="chip">${escapeHTML(album.visibility)}</span>
         `;
-      }
-      if (tagList) {
-        tagList.innerHTML = album.tags.length
-          ? album.tags.map((tag, index) => `<span class="chip small ${index === 0 ? "active" : ""}">${escapeHTML(tag)}</span>`).join("")
-          : `<span class="chip small">No tags</span>`;
       }
 
       photoGrid.innerHTML = photos.length
@@ -223,14 +160,14 @@ const theme = getThemeConfig();
 
 <style>
   .detail-page {
-    padding: 46px 0 110px;
+    padding: 44px 0 110px;
   }
 
   .breadcrumb {
     display: flex;
     align-items: center;
-    gap: 5px;
-    margin-bottom: 18px;
+    gap: 4px;
+    margin-bottom: 48px;
     color: var(--theme-muted);
     font-size: 16px;
     font-weight: 600;
@@ -240,48 +177,31 @@ const theme = getThemeConfig();
     color: var(--theme-text);
   }
 
-  .hero-card {
+  .album-hero {
     display: grid;
-    grid-template-columns: minmax(460px, 640px) 1fr;
-    gap: 46px;
-    align-items: center;
-    min-height: 336px;
-    padding: 20px;
-  }
-
-  .cover-collage {
-    display: grid;
-    grid-template-columns: 1fr 180px;
-    gap: 16px;
-    height: 292px;
-  }
-
-  .cover-main,
-  .cover-side > * {
-    min-width: 0;
-    min-height: 0;
-    height: 100%;
-    overflow: hidden;
-  }
-
-  .cover-side {
-    display: grid;
-    grid-template-rows: repeat(2, minmax(0, 1fr));
-    gap: 20px;
-    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 34px;
+    align-items: end;
+    margin-bottom: 74px;
   }
 
   .hero-content {
-    padding-right: 32px;
+    min-height: 0;
   }
 
   .hero-content .page-title {
-    margin: 18px 0 13px;
-    font-size: 64px;
+    display: inline-block;
+    margin: 0 42px 0 0;
+    font-size: clamp(52px, 5.8vw, 70px);
+    vertical-align: middle;
   }
 
   .hero-content .lead {
-    max-width: 580px;
+    display: inline;
+    color: var(--theme-muted);
+    font-size: 23px;
+    font-weight: 600;
+    line-height: 1.7;
   }
 
   .meta-chips,
@@ -292,18 +212,13 @@ const theme = getThemeConfig();
   }
 
   .meta-chips {
-    margin-top: 6px;
+    margin-top: 36px;
   }
 
   .actions {
-    margin-top: 20px;
-  }
-
-  .content-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 340px;
-    gap: 30px;
-    margin-top: 50px;
+    align-items: center;
+    justify-content: flex-end;
+    margin-bottom: 2px;
   }
 
   .photos-toolbar {
@@ -311,23 +226,21 @@ const theme = getThemeConfig();
     align-items: center;
     justify-content: space-between;
     min-height: 66px;
-    margin-bottom: 32px;
+    margin-bottom: 34px;
     padding: 0 23px;
     border: 1px solid var(--theme-border);
     border-radius: 20px;
     background: var(--theme-surface);
   }
 
-  .photos-toolbar h2,
-  .info-panel h2 {
+  .photos-toolbar h2 {
     margin: 0;
     color: var(--theme-text);
     font-size: 27px;
     font-weight: 900;
   }
 
-  .toolbar-chips,
-  .tag-list {
+  .toolbar-chips {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
@@ -335,59 +248,8 @@ const theme = getThemeConfig();
 
   .photo-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 16px 18px;
-  }
-
-  .info-panel {
-    align-self: start;
-    padding: 24px;
-    box-shadow: none;
-  }
-
-  dl {
-    display: grid;
-    gap: 30px;
-    margin: 25px 0 44px;
-  }
-
-  dl div {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 20px;
-  }
-
-  dt {
-    color: var(--theme-muted);
-    font-size: 15px;
-    font-weight: 500;
-  }
-
-  dd {
-    margin: 0;
-    color: var(--theme-text);
-    font-size: 15px;
-    font-weight: 800;
-  }
-
-  h3 {
-    margin: 0 0 14px;
-    color: var(--theme-text);
-    font-size: 18px;
-    font-weight: 900;
-  }
-
-  .tag-list {
-    padding-bottom: 18px;
-    border-bottom: 1px solid var(--theme-border);
-  }
-
-  .info-note {
-    margin: 22px 0 0;
-    color: var(--theme-muted);
-    font-size: 16px;
-    font-weight: 600;
-    line-height: 1.7;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 18px 54px;
   }
 
   .load-state {
@@ -418,6 +280,21 @@ const theme = getThemeConfig();
     border-color: var(--theme-text);
     background: var(--theme-text);
     color: var(--theme-surface);
+  }
+
+  .help-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--theme-border);
+    border-radius: var(--radius-pill);
+    background: var(--theme-surface);
+    color: var(--theme-text);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
   }
 
   :global(.chip) {
@@ -612,22 +489,34 @@ const theme = getThemeConfig();
   }
 
   @media (max-width: 1120px) {
-    .hero-card {
-      grid-template-columns: 1fr;
-    }
-
-    .content-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .info-panel {
-      display: none;
+    .photo-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
     }
   }
 
   @media (max-width: 900px) {
+    .album-hero {
+      display: block;
+      margin-bottom: 42px;
+    }
+
+    .hero-content .page-title {
+      display: block;
+      margin: 0 0 16px;
+    }
+
+    .hero-content .lead {
+      display: block;
+    }
+
+    .actions {
+      display: none;
+    }
+
     .photo-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
     }
   }
 
@@ -645,47 +534,17 @@ const theme = getThemeConfig();
       display: none;
     }
 
-    .hero-card {
-      display: flex;
-      flex-direction: column;
-      gap: 31px;
-      min-height: 0;
-      padding: 0;
-      border: 0;
-      border-radius: 0;
-      background: transparent;
-      box-shadow: none;
-    }
-
-    .cover-collage {
-      display: block;
-      width: 100%;
-      height: auto;
-    }
-
-    .cover-main {
-      aspect-ratio: 346 / 209;
-    }
-
-    .cover-side {
-      display: none;
-    }
-
-    .hero-content {
-      padding-right: 0;
-    }
-
     .hero-content .page-title {
-      margin: 13px 0 9px;
+      margin: 0 0 9px;
       font-size: 38px;
     }
 
-    .actions {
-      display: none;
+    .hero-content .lead {
+      font-size: 18px;
     }
 
-    .content-grid {
-      margin-top: 36px;
+    .meta-chips {
+      margin-top: 20px;
     }
 
     .photos-toolbar {

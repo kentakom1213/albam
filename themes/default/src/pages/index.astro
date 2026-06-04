@@ -22,15 +22,6 @@ const theme = getThemeConfig();
           <Chip label="All" active />
         </div>
       </div>
-
-      <aside class="stats-card" aria-label="Photo sync status">
-        <div>
-          <p>Photos</p>
-          <strong id="photo-total">0</strong>
-          <span>Synced locally</span>
-        </div>
-        <span class="stats-mark" aria-hidden="true"></span>
-      </aside>
     </section>
 
     <section class="album-grid" id="album-grid" aria-label="Albums">
@@ -46,7 +37,6 @@ const theme = getThemeConfig();
   const tones = ["peach", "linen", "mint", "sky", "lilac", "lemon"] as const;
   const albumGrid = document.querySelector<HTMLElement>("#album-grid");
   const tagList = document.querySelector<HTMLElement>("#tag-list");
-  const photoTotal = document.querySelector<HTMLElement>("#photo-total");
 
   function escapeHTML(value: string) {
     return value.replace(/[&<>"']/g, (char) => {
@@ -98,15 +88,13 @@ const theme = getThemeConfig();
   }
 
   async function renderHome() {
-    if (!albumGrid || !tagList || !photoTotal) {
+    if (!albumGrid || !tagList) {
       return;
     }
 
     try {
       const [albums, tags] = await Promise.all([getAlbums(), getTags().catch(() => [])]);
-      const total = albums.reduce((sum, album) => sum + album.photoCount, 0);
 
-      photoTotal.textContent = total.toLocaleString("en-US");
       tagList.innerHTML = [
         `<span class="chip active">All</span>`,
         ...tags.slice(0, 4).map((tag) => `<span class="chip">${escapeHTML(tag.name)}</span>`),
@@ -129,11 +117,35 @@ const theme = getThemeConfig();
   }
 
   .home-hero {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 48px;
     margin-bottom: 32px;
+  }
+
+  .hero-copy {
+    display: grid;
+    grid-template-columns: minmax(440px, 460px) minmax(0, 1fr);
+    align-items: end;
+    column-gap: 44px;
+  }
+
+  .desktop-eyebrow {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+  }
+
+  .hero-copy .page-title {
+    grid-column: 1;
+    grid-row: 2;
+    margin-bottom: 0;
+    white-space: nowrap;
+  }
+
+  .desktop-lead {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: end;
+    max-width: 740px;
+    padding-bottom: 2px;
   }
 
   .mobile-eyebrow,
@@ -142,53 +154,17 @@ const theme = getThemeConfig();
   }
 
   .chip-row {
+    grid-column: 1 / -1;
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    margin-top: 7px;
-  }
-
-  .stats-card {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    width: 276px;
-    min-height: 132px;
-    margin-top: 0;
-    padding: 23px 23px;
-    border: 1px solid var(--theme-border);
-    border-radius: 22px;
-    background: var(--theme-surface);
-  }
-
-  .stats-card p,
-  .stats-card span {
-    margin: 0;
-    color: var(--theme-muted);
-    font-size: 16px;
-    font-weight: 500;
-  }
-
-  .stats-card strong {
-    display: block;
-    margin-top: 9px;
-    color: var(--theme-text);
-    font-size: 42px;
-    font-weight: 900;
-    line-height: 0.9;
-  }
-
-  .stats-mark {
-    width: 42px;
-    height: 42px;
-    border-radius: 14px;
-    background: var(--theme-current-accent);
+    margin-top: 38px;
   }
 
   .album-grid {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 20px;
+    gap: 20px 18px;
   }
 
   .load-state {
@@ -227,7 +203,7 @@ const theme = getThemeConfig();
     border: 1px solid var(--theme-border);
     border-radius: var(--radius-card);
     background: var(--theme-surface);
-    box-shadow: var(--shadow-card);
+    box-shadow: 0 10px 24px rgb(0 0 0 / 5%);
   }
 
   .album-grid :global(.album-card:focus-visible) {
@@ -409,8 +385,12 @@ const theme = getThemeConfig();
       display: block;
     }
 
-    .stats-card {
-      display: none;
+    .hero-copy {
+      display: block;
+    }
+
+    .hero-copy .page-title {
+      white-space: normal;
     }
 
     .album-grid {

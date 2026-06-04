@@ -16,11 +16,11 @@ Accent candidates:
   --theme-text: #111111;
   --theme-muted: #777777;
   --theme-border: #e8e8e8;
-  --theme-current-accent: #ff6fae;
-  --theme-current-accent-soft: #ffe3ef;
+  --theme-current-accent: #ff625a;
+  --theme-current-accent-soft: #fff0ef;
 
   --radius-card: 18px;
-  --radius-panel: 30px;
+  --radius-panel: 20px;
   --radius-pill: 999px;
 
   --shadow-card: 0 10px 28px rgb(0 0 0 / 7%);

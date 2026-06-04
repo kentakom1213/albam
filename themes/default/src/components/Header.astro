@@ -1,11 +1,6 @@
 ---
 import { getThemeConfig } from "../lib/theme-config";
 
-type Props = {
-  backHref?: string;
-};
-
-const { backHref } = Astro.props;
 const theme = getThemeConfig();
 ---
 
@@ -15,22 +10,16 @@ const theme = getThemeConfig();
     <span class="brand-dot" aria-hidden="true"></span>
   </a>
 
-  {
-    backHref ? (
-      <a class="back-button" href={backHref}>Back</a>
-    ) : (
-      <div class="header-actions">
-        <nav class="site-nav" aria-label="Primary navigation">
-          <a class="active" href="/">{theme.nav.albums}</a>
-          <a href="/">{theme.nav.tags}</a>
-          <a href="/">{theme.nav.settings}</a>
-        </nav>
-        <button class="search-button" type="button" aria-label="Search">
-          <span class="search-ring" aria-hidden="true"></span>
-        </button>
-      </div>
-    )
-  }
+  <div class="header-actions">
+    <nav class="site-nav" aria-label="Primary navigation">
+      <a class="active" href="/">{theme.nav.albums}</a>
+      <a href="/">{theme.nav.tags}</a>
+      <a href="/">{theme.nav.settings}</a>
+    </nav>
+    <button class="search-button" type="button" aria-label="Search">
+      <span class="search-ring" aria-hidden="true"></span>
+    </button>
+  </div>
 </header>
 
 <style>
@@ -40,9 +29,7 @@ const theme = getThemeConfig();
     justify-content: space-between;
     height: 74px;
     padding: 0 56px;
-    border: 1px solid var(--theme-border);
-    border-right: 0;
-    border-left: 0;
+    border-bottom: 1px solid var(--theme-border);
     background: var(--theme-surface);
   }
 
@@ -85,8 +72,7 @@ const theme = getThemeConfig();
     color: var(--theme-text);
   }
 
-  .search-button,
-  .back-button {
+  .search-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -122,19 +108,10 @@ const theme = getThemeConfig();
     transform-origin: left center;
   }
 
-  .back-button {
-    min-width: 78px;
-    padding: 0 22px;
-    font-size: 14px;
-    font-weight: 700;
-  }
-
   @media (max-width: 640px) {
     .site-header {
       height: 72px;
       padding: 0 22px;
-      border-top-left-radius: var(--radius-panel);
-      border-top-right-radius: var(--radius-panel);
     }
 
     .brand {
