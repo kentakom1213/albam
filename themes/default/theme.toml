@@ -1,0 +1,13 @@
+name = "default"
+title = "albam"
+
+[params]
+brand = "albam"
+home_title = "My Albums"
+home_eyebrow = "SELF-HOSTED PHOTO ALBUM"
+home_description = "写真をディレクトリやタグごとに眺められるアルバムです。"
+
+[params.nav]
+albums = "Albums"
+tags = "Tags"
+settings = "Settings"

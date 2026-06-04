@@ -1,14 +1,17 @@
 ---
+import { getThemeConfig } from "../lib/theme-config";
+
 type Props = {
   backHref?: string;
 };
 
 const { backHref } = Astro.props;
+const theme = getThemeConfig();
 ---
 
 <header class="site-header">
-  <a class="brand" href="/" aria-label="albam home">
-    <span>albam</span>
+  <a class="brand" href="/" aria-label={`${theme.brand} home`}>
+    <span>{theme.brand}</span>
     <span class="brand-dot" aria-hidden="true"></span>
   </a>
 
@@ -18,9 +21,9 @@ const { backHref } = Astro.props;
     ) : (
       <div class="header-actions">
         <nav class="site-nav" aria-label="Primary navigation">
-          <a class="active" href="/">Albums</a>
-          <a href="/">Tags</a>
-          <a href="/">Settings</a>
+          <a class="active" href="/">{theme.nav.albums}</a>
+          <a href="/">{theme.nav.tags}</a>
+          <a href="/">{theme.nav.settings}</a>
         </nav>
         <button class="search-button" type="button" aria-label="Search">
           <span class="search-ring" aria-hidden="true"></span>

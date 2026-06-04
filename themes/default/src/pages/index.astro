@@ -2,25 +2,22 @@
 import Chip from "../components/Chip.astro";
 import Header from "../components/Header.astro";
 import Layout from "../components/Layout.astro";
+import { getThemeConfig } from "../lib/theme-config";
+
+const theme = getThemeConfig();
 ---
 
-<Layout title="albam | Your Albums">
+<Layout title={`${theme.siteTitle} | ${theme.homeTitle}`}>
   <Header />
 
   <main class="page-shell home-page">
     <section class="home-hero" aria-labelledby="home-title">
       <div class="hero-copy">
-        <p class="eyebrow desktop-eyebrow">SELF-HOSTED PHOTO ALBUM</p>
-        <p class="eyebrow mobile-eyebrow">PHOTO ALBUM</p>
-        <h1 id="home-title" class="page-title">Your Albums</h1>
-        <p class="lead desktop-lead">
-          写真をディレクトリやタグごとに，シンプルで可愛いグ<br />
-          リッドとして眺められるアルバムです。
-        </p>
-        <p class="lead mobile-lead">
-          白と黒をベースに，写真が主役になる<br />
-          小さなアルバム UI。
-        </p>
+        <p class="eyebrow desktop-eyebrow">{theme.homeEyebrow}</p>
+        <p class="eyebrow mobile-eyebrow">{theme.homeEyebrow}</p>
+        <h1 id="home-title" class="page-title">{theme.homeTitle}</h1>
+        <p class="lead desktop-lead">{theme.homeDescription}</p>
+        <p class="lead mobile-lead">{theme.homeDescription}</p>
         <div class="chip-row" id="tag-list" aria-label="Album filters">
           <Chip label="All" active />
         </div>

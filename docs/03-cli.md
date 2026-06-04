@@ -122,7 +122,6 @@ my-album/
 
 ```toml
 title = "My Albums"
-theme = "default"
 
 [server]
 host = "127.0.0.1"
@@ -140,7 +139,27 @@ path = ".albam/db.sqlite"
 out_dir = ".albam/public"
 
 [theme]
+name = "default"
 dir = "themes/default"
+```
+
+テーマに依存する表示文言は，テーマディレクトリ内の `themes/default/theme.toml` に書きます．
+`albam build` で Astro テーマを静的ビルドすると，その時点の値が HTML に埋め込まれます．
+
+```toml
+name = "default"
+title = "albam"
+
+[params]
+brand = "albam"
+home_title = "My Albums"
+home_eyebrow = "PHOTO ALBUM"
+home_description = "写真をディレクトリやタグごとに眺められるアルバムです。"
+
+[params.nav]
+albums = "Albums"
+tags = "Tags"
+settings = "Settings"
 ```
 
 ## albam init

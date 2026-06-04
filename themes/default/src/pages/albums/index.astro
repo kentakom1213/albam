@@ -1,12 +1,15 @@
 ---
 import Header from "../../components/Header.astro";
 import Layout from "../../components/Layout.astro";
+import { getThemeConfig } from "../../lib/theme-config";
+
+const theme = getThemeConfig();
 ---
 
-<Layout title="albam | Album">
+<Layout title={`${theme.siteTitle} | Album`}>
   <Header backHref="/" />
 
-  <main class="page-shell detail-page">
+  <main class="page-shell detail-page" data-site-title={theme.siteTitle}>
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href="/">Albums</a>
       <span>/</span>
@@ -87,6 +90,8 @@ import Layout from "../../components/Layout.astro";
   import type { Album, Photo } from "../../lib/api";
 
   const tones = ["peach", "linen", "mint", "sky", "lilac", "lemon"] as const;
+  const siteTitle =
+    document.querySelector<HTMLElement>(".detail-page")?.dataset.siteTitle ?? "albam";
 
   function escapeHTML(value: string) {
     return value.replace(/[&<>"']/g, (char) => {
@@ -164,7 +169,7 @@ import Layout from "../../components/Layout.astro";
       const shortDate = formatCompactMonth(album.createdAt);
       const coverPhotos = photos.slice(0, 3);
 
-      document.title = `albam | ${album.title}`;
+      document.title = `${siteTitle} | ${album.title}`;
       setText("#breadcrumb-kind", album.kind.replace(" ALBUM", ""));
       setText("#breadcrumb-title", album.title);
       setText("#album-kind", album.kind);
