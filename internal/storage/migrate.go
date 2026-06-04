@@ -26,6 +26,10 @@ CREATE TABLE IF NOT EXISTS assets (
 	updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	FOREIGN KEY (album_id) REFERENCES albums(id)
 );
+
+CREATE INDEX IF NOT EXISTS idx_albums_slug ON albums(slug);
+CREATE INDEX IF NOT EXISTS idx_albums_path ON albums(path COLLATE BINARY);
+CREATE INDEX IF NOT EXISTS idx_assets_album_id ON assets(album_id);
 	`)
 
 	return err

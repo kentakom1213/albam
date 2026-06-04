@@ -191,9 +191,15 @@ SELECT
     assets.file_mtime,
     assets.created_at,
     assets.updated_at
-FROM assets
-JOIN albums ON albums.id = assets.album_id
-WHERE albums.slug = ?
+FROM albums AS root
+JOIN albums AS child
+	ON child.path = root.path
+	OR (
+		child.path COLLATE BINARY >= root.path || '/'
+		AND child.path COLLATE BINARY < root.path || '0'
+	)
+JOIN assets ON assets.album_id = child.id
+WHERE root.slug = ?
 ORDER BY assets.path
 LIMIT ? OFFSET ?
 `, slug, limit, offset)
@@ -254,9 +260,15 @@ func (s *Storage) countAssetsByAlbumSlug(slug string) (int, error) {
 
 	err := s.db.QueryRow(`
 SELECT COUNT(*)
-FROM assets
-JOIN albums ON albums.id = assets.album_id
-WHERE albums.slug = ?
+FROM albums AS root
+JOIN albums AS child
+	ON child.path = root.path
+	OR (
+		child.path COLLATE BINARY >= root.path || '/'
+		AND child.path COLLATE BINARY < root.path || '0'
+	)
+JOIN assets ON assets.album_id = child.id
+WHERE root.slug = ?
 `, slug).Scan(&total)
 	if err != nil {
 		return 0, err
