@@ -71,7 +71,7 @@ func photoFromRow(row storage.AssetRow, albumID string) Photo {
 			Self:     "/api/photos/" + photoID,
 			Thumb:    "/media/photos/" + photoID + "/thumb",
 			Preview:  "/media/photos/" + photoID + "/preview",
-			Original: "/media/photos/" + photoID + "/original",
+			Original: "/media/" + photoID + "/original",
 		},
 	}
 }

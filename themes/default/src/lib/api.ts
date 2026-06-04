@@ -71,6 +71,7 @@ export type Photo = {
   albumId: string;
   src?: string;
   previewSrc?: string;
+  originalSrc?: string;
   tone?: Album["tone"];
 };
 
@@ -223,6 +224,7 @@ export function toPhoto(photo: ApiPhoto, index = 0): Photo {
     albumId: photo.album_id,
     src: resolveAssetUrl(photo.links.thumb),
     previewSrc: resolveAssetUrl(photo.links.preview),
+    originalSrc: resolveAssetUrl(photo.links.original),
     tone: tones[index % tones.length],
   };
 }

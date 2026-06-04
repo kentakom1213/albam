@@ -45,5 +45,6 @@ func (s *Server) registerDynamicRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/tags", s.handleListTags)
 
 	mediaHandler := NewMediaHandler(s.store, s.cfg.Media.SourceDir, s.cfg.Media.CacheDir)
+	mux.HandleFunc("/media/", mediaHandler.ServeHTTP)
 	mux.HandleFunc("/media/photos/", mediaHandler.ServeHTTP)
 }

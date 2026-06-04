@@ -47,6 +47,15 @@ const theme = getThemeConfig();
         <p class="load-state">Loading photos...</p>
       </div>
     </section>
+
+    <div class="photo-modal" id="photo-modal" role="dialog" aria-modal="true" aria-label="Photo viewer" hidden>
+      <button class="modal-backdrop" type="button" data-modal-close aria-label="Close photo viewer"></button>
+      <figure class="modal-frame">
+        <button class="modal-close" type="button" data-modal-close aria-label="Close photo viewer">×</button>
+        <img id="modal-image" alt="" />
+        <figcaption id="modal-caption"></figcaption>
+      </figure>
+    </div>
   </main>
 </Layout>
 
@@ -57,6 +66,9 @@ const theme = getThemeConfig();
   const tones = ["peach", "linen", "mint", "sky", "lilac", "lemon"] as const;
   const siteTitle =
     document.querySelector<HTMLElement>(".detail-page")?.dataset.siteTitle ?? "albam";
+  const photoModal = document.querySelector<HTMLElement>("#photo-modal");
+  const modalImage = document.querySelector<HTMLImageElement>("#modal-image");
+  const modalCaption = document.querySelector<HTMLElement>("#modal-caption");
 
   function escapeHTML(value: string) {
     return value.replace(/[&<>"']/g, (char) => {
@@ -95,13 +107,20 @@ const theme = getThemeConfig();
 
   function photoCard(photo: Photo, index: number) {
     const tone = photo.tone ?? tones[index % tones.length];
+    const originalSrc = photo.originalSrc ?? photo.previewSrc ?? photo.src ?? "";
 
     return `
-      <article class="photo-card">
+      <button
+        class="photo-card"
+        type="button"
+        data-original-src="${escapeHTML(originalSrc)}"
+        data-preview-src="${escapeHTML(photo.previewSrc ?? photo.src ?? "")}"
+        data-title="${escapeHTML(photo.title)}"
+      >
         <div class="photo-image">
           ${imageHTML(photo.src, tone, photo.title)}
         </div>
-      </article>
+      </button>
     `;
   }
 
@@ -152,6 +171,69 @@ const theme = getThemeConfig();
       photoGrid.innerHTML = `<p class="load-state">Failed to load album.</p>`;
     }
   }
+
+  function openPhotoModal(src: string, fallbackSrc: string, title: string) {
+    if (!photoModal || !modalImage || !modalCaption || !src) {
+      return;
+    }
+
+    modalImage.src = src;
+    modalImage.alt = title;
+    modalImage.dataset.fallbackSrc = fallbackSrc;
+    modalCaption.textContent = title;
+    photoModal.hidden = false;
+    document.body.classList.add("modal-open");
+  }
+
+  function closePhotoModal() {
+    if (!photoModal || !modalImage || !modalCaption) {
+      return;
+    }
+
+    photoModal.hidden = true;
+    modalImage.removeAttribute("src");
+    modalImage.removeAttribute("data-fallback-src");
+    modalImage.alt = "";
+    modalCaption.textContent = "";
+    document.body.classList.remove("modal-open");
+  }
+
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      return;
+    }
+
+    const closeButton = target.closest("[data-modal-close]");
+    if (closeButton) {
+      closePhotoModal();
+      return;
+    }
+
+    const photoCard = target.closest<HTMLElement>(".photo-card");
+    if (!photoCard) {
+      return;
+    }
+
+    openPhotoModal(
+      photoCard.dataset.originalSrc ?? "",
+      photoCard.dataset.previewSrc ?? "",
+      photoCard.dataset.title ?? "Photo",
+    );
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && photoModal && !photoModal.hidden) {
+      closePhotoModal();
+    }
+  });
+
+  modalImage?.addEventListener("error", () => {
+    const fallbackSrc = modalImage.dataset.fallbackSrc;
+    if (fallbackSrc && modalImage.src !== fallbackSrc) {
+      modalImage.src = fallbackSrc;
+    }
+  });
 
   renderAlbum();
 </script>
@@ -320,15 +402,91 @@ const theme = getThemeConfig();
   }
 
   :global(.photo-card) {
+    display: block;
+    width: 100%;
     padding: 8px;
     border: 1px solid var(--theme-border);
     border-radius: var(--radius-card);
     background: var(--theme-surface);
+    color: inherit;
     overflow: hidden;
+    text-align: left;
+  }
+
+  :global(.photo-card:focus-visible) {
+    outline: 2px solid var(--theme-current-accent);
+    outline-offset: 4px;
   }
 
   :global(.photo-image) {
     aspect-ratio: 1;
+  }
+
+  .photo-modal[hidden] {
+    display: none;
+  }
+
+  .photo-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    padding: 42px;
+  }
+
+  .modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgb(17 17 17 / 78%);
+  }
+
+  .modal-frame {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    justify-items: center;
+    max-width: min(100%, 1240px);
+    max-height: 100%;
+    margin: 0;
+  }
+
+  .modal-frame img {
+    max-width: 100%;
+    max-height: calc(100vh - 128px);
+    border-radius: 12px;
+    object-fit: contain;
+    box-shadow: 0 24px 80px rgb(0 0 0 / 34%);
+  }
+
+  .modal-close {
+    position: absolute;
+    right: -18px;
+    top: -18px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgb(255 255 255 / 30%);
+    border-radius: var(--radius-pill);
+    background: var(--theme-surface);
+    color: var(--theme-text);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  #modal-caption {
+    margin-top: 14px;
+    color: rgb(255 255 255 / 78%);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  :global(body.modal-open) {
+    overflow: hidden;
   }
 
   :global(.peach) {
@@ -509,6 +667,20 @@ const theme = getThemeConfig();
       grid-template-columns: repeat(var(--photo-grid-columns-mobile), minmax(0, 1fr));
       gap: 10px;
       padding-bottom: 24px;
+    }
+
+    .photo-modal {
+      padding: 20px;
+    }
+
+    .modal-frame img {
+      max-height: calc(100vh - 92px);
+      border-radius: 10px;
+    }
+
+    .modal-close {
+      right: 0;
+      top: -52px;
     }
   }
 </style>
