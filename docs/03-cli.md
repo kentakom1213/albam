@@ -152,6 +152,7 @@ title = "albam"
 
 [params]
 brand = "albam"
+accent = "coral"
 home_title = "My Albums"
 home_eyebrow = "PHOTO ALBUM"
 home_description = "写真をディレクトリやタグごとに眺められるアルバムです。"
@@ -163,6 +164,8 @@ albums = "Albums"
 tags = "Tags"
 settings = "Settings"
 ```
+
+`accent` は，`pink`，`coral`，`mint`，`blue`，`lavender`，`lemon`，`red`，`beige` から選べます．
 
 ## albam init
 

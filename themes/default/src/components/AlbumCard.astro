@@ -18,7 +18,6 @@ const { album } = Astro.props;
       <h2>{album.title}</h2>
       <p>{album.photoCount} photos</p>
     </div>
-    <span class="dot" aria-hidden="true"></span>
   </div>
 </a>
 
@@ -62,11 +61,6 @@ const { album } = Astro.props;
     color: var(--theme-muted);
     font-size: 13px;
     font-weight: 500;
-  }
-
-  .dot {
-    flex: 0 0 auto;
-    margin-top: 4px;
   }
 
   @media (max-width: 640px) {

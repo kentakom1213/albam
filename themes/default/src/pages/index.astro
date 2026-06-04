@@ -76,7 +76,6 @@ const theme = getThemeConfig();
             <h2>${escapeHTML(album.title)}</h2>
             <p>${album.photoCount.toLocaleString("en-US")} photos</p>
           </div>
-          <span class="dot" aria-hidden="true"></span>
         </div>
       </a>
     `;
@@ -214,11 +213,6 @@ const theme = getThemeConfig();
     color: var(--theme-muted);
     font-size: 13px;
     font-weight: 500;
-  }
-
-  .album-grid :global(.dot) {
-    flex: 0 0 auto;
-    margin-top: 4px;
   }
 
   :global(.peach) {

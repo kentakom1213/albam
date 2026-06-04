@@ -4,6 +4,11 @@ import { join } from "node:path";
 export type ThemeConfig = {
   siteTitle: string;
   brand: string;
+  accent: {
+    name: AccentName;
+    color: string;
+    soft: string;
+  };
   homeTitle: string;
   homeEyebrow: string;
   homeDescription: string;
@@ -21,10 +26,13 @@ export type ThemeConfig = {
   };
 };
 
+type AccentName = "pink" | "coral" | "mint" | "blue" | "lavender" | "lemon" | "red" | "beige";
+
 type RawThemeConfig = {
   title?: string;
   params?: {
     brand?: string;
+    accent?: string;
     home_title?: string;
     home_eyebrow?: string;
     home_description?: string;
@@ -39,9 +47,24 @@ type RawThemeConfig = {
 
 type TomlObject = Record<string, string | number | TomlObject>;
 
+const accents: Record<AccentName, { color: string; soft: string }> = {
+  pink: { color: "#ff6fae", soft: "#ffe3ef" },
+  coral: { color: "#ff6b5f", soft: "#ffe6e2" },
+  mint: { color: "#35c99b", soft: "#dff8ef" },
+  blue: { color: "#4da3ff", soft: "#e3f1ff" },
+  lavender: { color: "#9b7cff", soft: "#eee8ff" },
+  lemon: { color: "#f4c430", soft: "#fff5c7" },
+  red: { color: "#f04438", soft: "#ffe4e0" },
+  beige: { color: "#c88a5a", soft: "#f4e8dd" },
+};
+
 const defaults: ThemeConfig = {
   siteTitle: "albam",
   brand: "albam",
+  accent: {
+    name: "pink",
+    ...accents.pink,
+  },
   homeTitle: "Your Albums",
   homeEyebrow: "SELF-HOSTED PHOTO ALBUM",
   homeDescription: "写真をディレクトリごとに，シンプルで可愛いグリッドとして眺められるアルバムです。",
@@ -64,10 +87,16 @@ export function getThemeConfig(): ThemeConfig {
   const params = raw.params ?? {};
   const albumGridColumns = numberValue(params.album_grid_columns, defaults.layout.albumGridColumns, 1, 8);
   const photoGridColumns = numberValue(params.photo_grid_columns, defaults.layout.photoGridColumns, 1, 10);
+  const accentName = accentValue(params.accent, defaults.accent.name);
+  const accent = accents[accentName];
 
   return {
     siteTitle: stringValue(raw.title, defaults.siteTitle),
     brand: stringValue(params.brand, defaults.brand),
+    accent: {
+      name: accentName,
+      ...accent,
+    },
     homeTitle: stringValue(params.home_title, defaults.homeTitle),
     homeEyebrow: stringValue(params.home_eyebrow, defaults.homeEyebrow),
     homeDescription: stringValue(params.home_description, defaults.homeDescription),
@@ -94,6 +123,10 @@ function numberValue(value: unknown, fallback: number, min: number, max: number)
   return typeof value === "number" && Number.isInteger(value)
     ? Math.min(Math.max(value, min), max)
     : fallback;
+}
+
+function accentValue(value: unknown, fallback: AccentName): AccentName {
+  return typeof value === "string" && value in accents ? (value as AccentName) : fallback;
 }
 
 function parseThemeToml(source: string): RawThemeConfig {

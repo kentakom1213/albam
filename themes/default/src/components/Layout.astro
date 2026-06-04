@@ -1,12 +1,15 @@
 ---
 import "../styles/theme.css";
 import "../styles/global.css";
+import { getThemeConfig } from "../lib/theme-config";
 
 type Props = {
   title?: string;
 };
 
 const { title = "albam" } = Astro.props;
+const theme = getThemeConfig();
+const accentStyle = `--theme-current-accent: ${theme.accent.color}; --theme-current-accent-soft: ${theme.accent.soft};`;
 ---
 
 <!doctype html>
@@ -17,7 +20,7 @@ const { title = "albam" } = Astro.props;
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
   </head>
-  <body>
+  <body style={accentStyle}>
     <slot />
   </body>
 </html>

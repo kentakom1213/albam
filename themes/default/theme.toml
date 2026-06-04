@@ -3,6 +3,7 @@ title = "albam"
 
 [params]
 brand = "albam"
+accent = "coral"
 home_title = "My Albums"
 home_eyebrow = "SELF-HOSTED PHOTO ALBUM"
 home_description = "写真をディレクトリごとに眺められるアルバムです。"
