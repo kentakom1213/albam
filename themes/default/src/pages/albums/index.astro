@@ -40,7 +40,52 @@ const theme = getThemeConfig();
 
     <section class="photos-section" aria-label="Photos">
       <div class="photo-grid" id="photo-grid">
-        <p class="load-state">Loading photos...</p>
+        <div class="photo-card loading-photo-card" aria-label="Loading photos">
+          <div class="photo-image loading-image">
+            <span class="loading-circle large"></span>
+            <span class="loading-circle small"></span>
+            <span class="loading-mark"></span>
+          </div>
+        </div>
+        <div class="photo-card loading-photo-card" aria-hidden="true">
+          <div class="photo-image loading-image">
+            <span class="loading-circle large"></span>
+            <span class="loading-circle small"></span>
+            <span class="loading-mark"></span>
+          </div>
+        </div>
+        <div class="photo-card loading-photo-card" aria-hidden="true">
+          <div class="photo-image loading-image">
+            <span class="loading-circle large"></span>
+            <span class="loading-circle small"></span>
+            <span class="loading-mark"></span>
+          </div>
+        </div>
+        <div class="photo-card loading-photo-card" aria-hidden="true">
+          <div class="photo-image loading-image">
+            <span class="loading-circle large"></span>
+            <span class="loading-circle small"></span>
+            <span class="loading-mark"></span>
+          </div>
+        </div>
+        <div class="photo-card loading-photo-card" aria-hidden="true">
+          <div class="photo-image loading-image">
+            <span class="loading-circle large"></span>
+            <span class="loading-circle small"></span>
+            <span class="loading-mark"></span>
+          </div>
+        </div>
+        <div class="photo-card loading-photo-card" aria-hidden="true">
+          <div class="photo-image loading-image">
+            <span class="loading-circle large"></span>
+            <span class="loading-circle small"></span>
+            <span class="loading-mark"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pagination-actions">
+        <button class="button" id="load-more-photos" type="button" hidden>Load more</button>
       </div>
     </section>
 
@@ -56,7 +101,7 @@ const theme = getThemeConfig();
 </Layout>
 
 <script>
-  import { formatCompactDate, formatCompactMonth, getAlbum, getAlbumPhotosWithPagination } from "../../lib/api";
+  import { formatCompactDate, formatCompactMonth, getAlbum, getAlbumPhotosWithPagination, getPhoto } from "../../lib/api";
   import type { Album, Breadcrumb, Photo } from "../../lib/api";
 
   const tones = ["peach", "linen", "mint", "sky", "lilac", "lemon"] as const;
@@ -65,6 +110,9 @@ const theme = getThemeConfig();
   const photoModal = document.querySelector<HTMLElement>("#photo-modal");
   const modalImage = document.querySelector<HTMLImageElement>("#modal-image");
   const modalCaption = document.querySelector<HTMLElement>("#modal-caption");
+  const loadMorePhotosButton = document.querySelector<HTMLButtonElement>("#load-more-photos");
+  let loadedPhotoCount = 0;
+  let hasMorePhotos = false;
 
   function escapeHTML(value: string) {
     return value.replace(/[&<>"']/g, (char) => {
@@ -82,6 +130,19 @@ const theme = getThemeConfig();
   function currentAlbumId() {
     const parts = window.location.pathname.split("/").filter(Boolean);
     return parts[0] === "albums" ? decodeURIComponent(parts[1] ?? "") : "";
+  }
+
+  function currentPhotoId() {
+    const parts = window.location.pathname.split("/").filter(Boolean);
+    return parts[0] === "albums" && parts[2] === "photos" ? decodeURIComponent(parts[3] ?? "") : "";
+  }
+
+  function albumPath(albumId: string) {
+    return `/albums/${encodeURIComponent(albumId)}/`;
+  }
+
+  function photoPath(albumId: string, photoId: string) {
+    return `${albumPath(albumId)}photos/${encodeURIComponent(photoId)}/`;
   }
 
   function imageHTML(src: string | undefined, tone: Album["tone"], alt: string, collage = false) {
@@ -109,6 +170,7 @@ const theme = getThemeConfig();
       <button
         class="photo-card"
         type="button"
+        data-photo-id="${escapeHTML(photo.id)}"
         data-original-src="${escapeHTML(originalSrc)}"
         data-preview-src="${escapeHTML(photo.previewSrc ?? photo.src ?? "")}"
         data-title="${escapeHTML(photo.title)}"
@@ -173,6 +235,8 @@ const theme = getThemeConfig();
         getAlbumPhotosWithPagination(albumId),
       ]);
       const { photos, pagination } = photosResult;
+      loadedPhotoCount = photos.length;
+      hasMorePhotos = pagination.has_next;
       const visibleDate = formatCompactDate(album.createdAt);
       const shortDate = formatCompactMonth(album.createdAt);
 
@@ -194,15 +258,25 @@ const theme = getThemeConfig();
       photoGrid.innerHTML = photos.length
         ? photos.map(photoCard).join("")
         : `<p class="load-state">No photos indexed yet.</p>`;
+      updateLoadMorePhotosButton();
+
+      openDirectLinkedPhoto();
     } catch (error) {
       console.error(error);
       photoGrid.innerHTML = `<p class="load-state">Failed to load album.</p>`;
     }
   }
 
-  function openPhotoModal(src: string, fallbackSrc: string, title: string) {
+  function openPhotoModal(src: string, fallbackSrc: string, title: string, photoId = "", updateURL = false) {
     if (!photoModal || !modalImage || !modalCaption || !src) {
       return;
+    }
+
+    if (updateURL && photoId) {
+      const albumId = currentAlbumId();
+      if (albumId) {
+        window.history.pushState({ photoId }, "", photoPath(albumId, photoId));
+      }
     }
 
     modalImage.src = src;
@@ -213,9 +287,16 @@ const theme = getThemeConfig();
     document.body.classList.add("modal-open");
   }
 
-  function closePhotoModal() {
+  function closePhotoModal(updateURL = true) {
     if (!photoModal || !modalImage || !modalCaption) {
       return;
+    }
+
+    if (updateURL && currentPhotoId()) {
+      const albumId = currentAlbumId();
+      if (albumId) {
+        window.history.pushState({}, "", albumPath(albumId));
+      }
     }
 
     photoModal.hidden = true;
@@ -224,6 +305,70 @@ const theme = getThemeConfig();
     modalImage.alt = "";
     modalCaption.textContent = "";
     document.body.classList.remove("modal-open");
+  }
+
+  function updateLoadMorePhotosButton() {
+    if (!loadMorePhotosButton) {
+      return;
+    }
+
+    loadMorePhotosButton.hidden = !hasMorePhotos;
+    loadMorePhotosButton.disabled = false;
+    loadMorePhotosButton.textContent = "Load more";
+  }
+
+  function loadingButtonHTML(label: string) {
+    return `
+      <span>${label}</span>
+      <span class="button-loading-dots" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </span>
+    `;
+  }
+
+  async function loadMorePhotos() {
+    const albumId = currentAlbumId();
+    const photoGrid = document.querySelector<HTMLElement>("#photo-grid");
+    if (!albumId || !photoGrid || !loadMorePhotosButton || !hasMorePhotos) {
+      return;
+    }
+
+    loadMorePhotosButton.disabled = true;
+    loadMorePhotosButton.innerHTML = loadingButtonHTML("Loading");
+
+    try {
+      const { photos, pagination } = await getAlbumPhotosWithPagination(albumId, {
+        offset: loadedPhotoCount,
+      });
+      photoGrid.insertAdjacentHTML("beforeend", photos.map(photoCard).join(""));
+      loadedPhotoCount += photos.length;
+      hasMorePhotos = pagination.has_next;
+      updateLoadMorePhotosButton();
+    } catch (error) {
+      console.error(error);
+      loadMorePhotosButton.disabled = false;
+      loadMorePhotosButton.textContent = "Load more";
+    }
+  }
+
+  async function openDirectLinkedPhoto() {
+    const photoId = currentPhotoId();
+    if (!photoId) {
+      return;
+    }
+
+    try {
+      const photo = await getPhoto(photoId);
+      openPhotoModal(
+        photo.originalSrc ?? photo.previewSrc ?? photo.src ?? "",
+        photo.previewSrc ?? photo.src ?? "",
+        photo.title,
+      );
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   document.addEventListener("click", (event) => {
@@ -247,7 +392,20 @@ const theme = getThemeConfig();
       photoCard.dataset.originalSrc ?? "",
       photoCard.dataset.previewSrc ?? "",
       photoCard.dataset.title ?? "Photo",
+      photoCard.dataset.photoId ?? "",
+      true,
     );
+  });
+
+  loadMorePhotosButton?.addEventListener("click", loadMorePhotos);
+
+  window.addEventListener("popstate", () => {
+    if (currentPhotoId()) {
+      openDirectLinkedPhoto();
+      return;
+    }
+
+    closePhotoModal(false);
   });
 
   document.addEventListener("keydown", (event) => {
@@ -379,6 +537,44 @@ const theme = getThemeConfig();
     color: var(--theme-surface);
   }
 
+  .pagination-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 28px;
+  }
+
+  .pagination-actions:has([hidden]) {
+    display: none;
+  }
+
+  .button[disabled] {
+    cursor: progress;
+    opacity: 0.78;
+  }
+
+  :global(.button-loading-dots) {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 10px;
+  }
+
+  :global(.button-loading-dots span) {
+    width: 5px;
+    height: 5px;
+    border-radius: var(--radius-pill);
+    background: var(--theme-current-accent);
+    animation: loading-dot 0.9s ease-in-out infinite;
+  }
+
+  :global(.button-loading-dots span:nth-child(2)) {
+    animation-delay: 0.12s;
+  }
+
+  :global(.button-loading-dots span:nth-child(3)) {
+    animation-delay: 0.24s;
+  }
+
   .help-button {
     display: inline-flex;
     align-items: center;
@@ -432,6 +628,13 @@ const theme = getThemeConfig();
 
   :global(.image) {
     object-fit: cover;
+    color: transparent;
+    font-size: 0;
+    background:
+      linear-gradient(100deg, transparent 0%, rgb(255 255 255 / 52%) 45%, transparent 76%),
+      var(--theme-current-accent-soft);
+    background-size: 220% 100%, 100% 100%;
+    animation: image-loading-sheen 1.8s ease-in-out infinite;
   }
 
   :global(.placeholder) {
@@ -456,8 +659,61 @@ const theme = getThemeConfig();
     outline-offset: 4px;
   }
 
+  :global(.loading-photo-card) {
+    pointer-events: none;
+  }
+
   :global(.photo-image) {
     aspect-ratio: 1;
+  }
+
+  :global(.loading-image) {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--theme-current-accent-soft);
+    animation: loading-surface 1.45s ease-in-out infinite;
+  }
+
+  :global(.loading-image)::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 0%, rgb(255 255 255 / 52%) 45%, transparent 76%);
+    transform: translateX(-120%);
+    animation: loading-sheen 1.8s ease-in-out infinite;
+  }
+
+  :global(.loading-circle),
+  :global(.loading-mark) {
+    position: absolute;
+    display: block;
+    border-radius: var(--radius-pill);
+  }
+
+  :global(.loading-circle.large) {
+    left: -20%;
+    bottom: -12%;
+    width: 72%;
+    aspect-ratio: 1;
+    background: rgb(255 255 255 / 62%);
+  }
+
+  :global(.loading-circle.small) {
+    right: -10%;
+    top: -8%;
+    width: 38%;
+    aspect-ratio: 1;
+    background: rgb(255 98 90 / 18%);
+  }
+
+  :global(.loading-mark) {
+    left: 14%;
+    top: 14%;
+    width: 17%;
+    aspect-ratio: 1;
+    background: var(--theme-current-accent);
+    animation: loading-pop 1.45s ease-in-out infinite;
   }
 
   .photo-modal[hidden] {
@@ -525,6 +781,58 @@ const theme = getThemeConfig();
 
   :global(body.modal-open) {
     overflow: hidden;
+  }
+
+  @keyframes loading-sheen {
+    to {
+      transform: translateX(120%);
+    }
+  }
+
+  @keyframes image-loading-sheen {
+    from {
+      background-position: -120% 0, 0 0;
+    }
+
+    to {
+      background-position: 120% 0, 0 0;
+    }
+  }
+
+  @keyframes loading-surface {
+    0%,
+    100% {
+      opacity: 0.62;
+    }
+
+    50% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes loading-pop {
+    0%,
+    100% {
+      transform: scale(0.88);
+    }
+
+    50% {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes loading-dot {
+    0%,
+    80%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.42;
+    }
+
+    40% {
+      transform: translateY(-3px);
+      opacity: 1;
+    }
   }
 
   :global(.peach) {

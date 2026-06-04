@@ -88,6 +88,11 @@ export type AlbumPhotosResult = {
   pagination: Pagination;
 };
 
+export type AlbumsResult = {
+  albums: Album[];
+  pagination: Pagination;
+};
+
 type AlbumsResponse = {
   albums: ApiAlbum[];
   pagination: Pagination;
@@ -100,6 +105,10 @@ type AlbumResponse = {
 type PhotosResponse = {
   photos: ApiPhoto[];
   pagination: Pagination;
+};
+
+type PhotoResponse = {
+  photo: ApiPhoto;
 };
 
 type ApiErrorResponse = {
@@ -242,9 +251,22 @@ export function toPhoto(photo: ApiPhoto, index = 0): Photo {
   };
 }
 
+export async function getAlbumsWithPagination(params: { limit?: number; offset?: number } = {}): Promise<AlbumsResult> {
+  const offset = params.offset ?? 0;
+  const body = await request<AlbumsResponse>("albums", {
+    limit: params.limit ?? 50,
+    offset,
+  });
+
+  return {
+    albums: body.albums.map((album, index) => toAlbum(album, offset + index)),
+    pagination: body.pagination,
+  };
+}
+
 export async function getAlbums(): Promise<Album[]> {
-  const body = await request<AlbumsResponse>("albums", { limit: 50, offset: 0 });
-  return body.albums.map(toAlbum);
+  const body = await getAlbumsWithPagination();
+  return body.albums;
 }
 
 export async function getAlbum(albumId: string): Promise<Album> {
@@ -252,13 +274,18 @@ export async function getAlbum(albumId: string): Promise<Album> {
   return toAlbum(body.album);
 }
 
-export async function getAlbumPhotosWithPagination(albumId: string): Promise<AlbumPhotosResult> {
+export async function getAlbumPhotosWithPagination(
+  albumId: string,
+  params: { limit?: number; offset?: number } = {},
+): Promise<AlbumPhotosResult> {
+  const offset = params.offset ?? 0;
   const body = await request<PhotosResponse>(`albums/${albumId}/photos`, {
-    limit: 100,
-    offset: 0,
+    limit: params.limit ?? 100,
+    offset,
   });
+
   return {
-    photos: body.photos.map(toPhoto),
+    photos: body.photos.map((photo, index) => toPhoto(photo, offset + index)),
     pagination: body.pagination,
   };
 }
@@ -266,4 +293,9 @@ export async function getAlbumPhotosWithPagination(albumId: string): Promise<Alb
 export async function getAlbumPhotos(albumId: string): Promise<Photo[]> {
   const body = await getAlbumPhotosWithPagination(albumId);
   return body.photos;
+}
+
+export async function getPhoto(photoId: string): Promise<Photo> {
+  const body = await request<PhotoResponse>(`photos/${photoId}`);
+  return toPhoto(body.photo);
 }

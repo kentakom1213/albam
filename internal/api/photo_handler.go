@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/kentakom1213/albam/internal/storage"
 )
@@ -52,6 +53,38 @@ func (s *Server) handleListAlbumPhotos(w http.ResponseWriter, r *http.Request, a
 	})
 }
 
+func (s *Server) handlePhotoSubroutes(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed")
+		return
+	}
+
+	rest := strings.TrimPrefix(r.URL.Path, "/api/photos/")
+	rest = strings.Trim(rest, "/")
+	if rest == "" || strings.Contains(rest, "/") {
+		writeError(w, http.StatusNotFound, "not_found", "not found")
+		return
+	}
+
+	s.handleGetPhoto(w, r, rest)
+}
+
+func (s *Server) handleGetPhoto(w http.ResponseWriter, r *http.Request, photoID string) {
+	row, err := s.store.GetAssetBySlug(photoID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "failed to get photo")
+		return
+	}
+	if row == nil {
+		writeError(w, http.StatusNotFound, "photo_not_found", "photo not found")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, PhotoResponse{
+		Photo: photoFromRow(*row, row.AlbumSlug),
+	})
+}
+
 func photoFromRow(row storage.AssetRow, albumID string) Photo {
 	photoID := row.Slug
 
@@ -70,7 +103,7 @@ func photoFromRow(row storage.AssetRow, albumID string) Photo {
 			Self:     "/api/photos/" + photoID,
 			Thumb:    "/media/photos/" + photoID + "/thumb",
 			Preview:  "/media/photos/" + photoID + "/preview",
-			Original: "/media/" + photoID + "/original",
+			Original: "/media/photos/" + photoID + "/original",
 		},
 	}
 }

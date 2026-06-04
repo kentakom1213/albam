@@ -20,6 +20,7 @@ type AssetRow struct {
 	ID        int64
 	Slug      string
 	AlbumID   int64
+	AlbumSlug string
 	Path      string
 	Filename  string
 	Ext       string
@@ -154,6 +155,49 @@ WHERE id = ?
 		&asset.ID,
 		&asset.Slug,
 		&asset.AlbumID,
+		&asset.Path,
+		&asset.Filename,
+		&asset.Ext,
+		&asset.Size,
+		&asset.ModTime,
+		&asset.CreatedAt,
+		&asset.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return &asset, nil
+}
+
+func (s *Storage) GetAssetBySlug(slug string) (*AssetRow, error) {
+	var asset AssetRow
+
+	err := s.db.QueryRow(`
+SELECT
+    assets.id,
+	assets.slug,
+    assets.album_id,
+	albums.slug,
+    assets.path,
+    assets.filename,
+    assets.ext,
+    assets.size_bytes,
+    assets.file_mtime,
+    assets.created_at,
+    assets.updated_at
+FROM assets
+JOIN albums ON albums.id = assets.album_id
+WHERE assets.slug = ?
+`, slug).Scan(
+		&asset.ID,
+		&asset.Slug,
+		&asset.AlbumID,
+		&asset.AlbumSlug,
 		&asset.Path,
 		&asset.Filename,
 		&asset.Ext,

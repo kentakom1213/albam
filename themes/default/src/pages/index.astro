@@ -21,17 +21,56 @@ const theme = getThemeConfig();
     </section>
 
     <section class="album-grid" id="album-grid" aria-label="Albums">
-      <p class="load-state">Loading albums...</p>
+      <div class="album-card loading-card" aria-label="Loading albums">
+        <div class="album-image loading-image">
+          <span class="loading-circle large"></span>
+          <span class="loading-circle small"></span>
+          <span class="loading-mark"></span>
+        </div>
+        <div class="album-meta loading-meta">
+          <span class="loading-line title"></span>
+          <span class="loading-line body"></span>
+        </div>
+      </div>
+      <div class="album-card loading-card" aria-hidden="true">
+        <div class="album-image loading-image">
+          <span class="loading-circle large"></span>
+          <span class="loading-circle small"></span>
+          <span class="loading-mark"></span>
+        </div>
+        <div class="album-meta loading-meta">
+          <span class="loading-line title"></span>
+          <span class="loading-line body"></span>
+        </div>
+      </div>
+      <div class="album-card loading-card" aria-hidden="true">
+        <div class="album-image loading-image">
+          <span class="loading-circle large"></span>
+          <span class="loading-circle small"></span>
+          <span class="loading-mark"></span>
+        </div>
+        <div class="album-meta loading-meta">
+          <span class="loading-line title"></span>
+          <span class="loading-line body"></span>
+        </div>
+      </div>
     </section>
+
+    <div class="pagination-actions">
+      <button class="button" id="load-more-albums" type="button" hidden>Load more</button>
+    </div>
   </main>
 </Layout>
 
 <script>
-  import { getAlbums } from "../lib/api";
+  import { getAlbumsWithPagination } from "../lib/api";
   import type { Album } from "../lib/api";
 
   const tones = ["peach", "linen", "mint", "sky", "lilac", "lemon"] as const;
   const albumGrid = document.querySelector<HTMLElement>("#album-grid");
+  const loadMoreAlbumsButton = document.querySelector<HTMLButtonElement>("#load-more-albums");
+  let loadedAlbumCount = 0;
+  let hasMoreAlbums = false;
 
   function escapeHTML(value: string) {
     return value.replace(/[&<>"']/g, (char) => {
@@ -87,16 +126,63 @@ const theme = getThemeConfig();
     }
 
     try {
-      const albums = await getAlbums();
+      const { albums, pagination } = await getAlbumsWithPagination();
+      loadedAlbumCount = albums.length;
+      hasMoreAlbums = pagination.has_next;
 
       albumGrid.innerHTML = albums.length
         ? albums.map(albumCard).join("")
         : `<p class="load-state">No albums indexed yet.</p>`;
+      updateLoadMoreAlbumsButton();
     } catch (error) {
       console.error(error);
       albumGrid.innerHTML = `<p class="load-state">Failed to load albums.</p>`;
     }
   }
+
+  function updateLoadMoreAlbumsButton() {
+    if (!loadMoreAlbumsButton) {
+      return;
+    }
+
+    loadMoreAlbumsButton.hidden = !hasMoreAlbums;
+    loadMoreAlbumsButton.disabled = false;
+    loadMoreAlbumsButton.textContent = "Load more";
+  }
+
+  function loadingButtonHTML(label: string) {
+    return `
+      <span>${label}</span>
+      <span class="button-loading-dots" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </span>
+    `;
+  }
+
+  async function loadMoreAlbums() {
+    if (!albumGrid || !loadMoreAlbumsButton || !hasMoreAlbums) {
+      return;
+    }
+
+    loadMoreAlbumsButton.disabled = true;
+    loadMoreAlbumsButton.innerHTML = loadingButtonHTML("Loading");
+
+    try {
+      const { albums, pagination } = await getAlbumsWithPagination({ offset: loadedAlbumCount });
+      albumGrid.insertAdjacentHTML("beforeend", albums.map(albumCard).join(""));
+      loadedAlbumCount += albums.length;
+      hasMoreAlbums = pagination.has_next;
+      updateLoadMoreAlbumsButton();
+    } catch (error) {
+      console.error(error);
+      loadMoreAlbumsButton.disabled = false;
+      loadMoreAlbumsButton.textContent = "Load more";
+    }
+  }
+
+  loadMoreAlbumsButton?.addEventListener("click", loadMoreAlbums);
 
   renderHome();
 </script>
@@ -149,12 +235,118 @@ const theme = getThemeConfig();
     gap: 20px 18px;
   }
 
+  .pagination-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 28px;
+  }
+
+  .pagination-actions:has([hidden]) {
+    display: none;
+  }
+
+  :global(.button) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 24px;
+    border: 1px solid var(--theme-border);
+    border-radius: var(--radius-pill);
+    background: var(--theme-surface);
+    color: var(--theme-text);
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .button[disabled] {
+    cursor: progress;
+    opacity: 0.78;
+  }
+
+  :global(.button-loading-dots) {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 10px;
+  }
+
+  :global(.button-loading-dots span) {
+    width: 5px;
+    height: 5px;
+    border-radius: var(--radius-pill);
+    background: var(--theme-current-accent);
+    animation: loading-dot 0.9s ease-in-out infinite;
+  }
+
+  :global(.button-loading-dots span:nth-child(2)) {
+    animation-delay: 0.12s;
+  }
+
+  :global(.button-loading-dots span:nth-child(3)) {
+    animation-delay: 0.24s;
+  }
+
   .load-state {
     grid-column: 1 / -1;
     margin: 0;
     color: var(--theme-muted);
     font-size: 16px;
     font-weight: 600;
+  }
+
+  @keyframes loading-sheen {
+    to {
+      transform: translateX(120%);
+    }
+  }
+
+  @keyframes image-loading-sheen {
+    from {
+      background-position: -120% 0, 0 0;
+    }
+
+    to {
+      background-position: 120% 0, 0 0;
+    }
+  }
+
+  @keyframes loading-surface {
+    0%,
+    100% {
+      opacity: 0.62;
+    }
+
+    50% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes loading-pop {
+    0%,
+    100% {
+      transform: scale(0.88);
+    }
+
+    50% {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes loading-dot {
+    0%,
+    80%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.42;
+    }
+
+    40% {
+      transform: translateY(-3px);
+      opacity: 1;
+    }
   }
 
   .album-grid :global(.album-card) {
@@ -164,6 +356,10 @@ const theme = getThemeConfig();
     border-radius: var(--radius-card);
     background: var(--theme-surface);
     box-shadow: 0 10px 24px rgb(0 0 0 / 5%);
+  }
+
+  .album-grid :global(.loading-card) {
+    pointer-events: none;
   }
 
   .album-grid :global(.album-card:focus-visible) {
@@ -185,11 +381,67 @@ const theme = getThemeConfig();
 
   .album-grid :global(.image) {
     object-fit: cover;
+    color: transparent;
+    font-size: 0;
+    background:
+      linear-gradient(100deg, transparent 0%, rgb(255 255 255 / 52%) 45%, transparent 76%),
+      var(--theme-current-accent-soft);
+    background-size: 220% 100%, 100% 100%;
+    animation: image-loading-sheen 1.8s ease-in-out infinite;
   }
 
   .album-grid :global(.placeholder) {
     position: relative;
     background: var(--ph-bg);
+  }
+
+  .album-grid :global(.loading-image) {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--theme-current-accent-soft);
+    animation: loading-surface 1.45s ease-in-out infinite;
+  }
+
+  .album-grid :global(.loading-image)::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 0%, rgb(255 255 255 / 52%) 45%, transparent 76%);
+    transform: translateX(-120%);
+    animation: loading-sheen 1.8s ease-in-out infinite;
+  }
+
+  .album-grid :global(.loading-circle),
+  .album-grid :global(.loading-mark) {
+    position: absolute;
+    display: block;
+    border-radius: var(--radius-pill);
+  }
+
+  .album-grid :global(.loading-circle.large) {
+    left: -20%;
+    bottom: -12%;
+    width: 72%;
+    aspect-ratio: 1;
+    background: rgb(255 255 255 / 62%);
+  }
+
+  .album-grid :global(.loading-circle.small) {
+    right: -10%;
+    top: -8%;
+    width: 38%;
+    aspect-ratio: 1;
+    background: rgb(255 98 90 / 18%);
+  }
+
+  .album-grid :global(.loading-mark) {
+    left: 14%;
+    top: 14%;
+    width: 17%;
+    aspect-ratio: 1;
+    background: var(--theme-current-accent);
+    animation: loading-pop 1.45s ease-in-out infinite;
   }
 
   .album-grid :global(.album-meta) {
@@ -198,6 +450,27 @@ const theme = getThemeConfig();
     justify-content: space-between;
     gap: 12px;
     padding: 27px 4px 0;
+  }
+
+  .album-grid :global(.loading-meta) {
+    display: grid;
+    gap: 10px;
+  }
+
+  .album-grid :global(.loading-line) {
+    display: block;
+    height: 12px;
+    border-radius: var(--radius-pill);
+    background: var(--theme-border);
+    animation: loading-surface 1.45s ease-in-out infinite;
+  }
+
+  .album-grid :global(.loading-line.title) {
+    width: 62%;
+  }
+
+  .album-grid :global(.loading-line.body) {
+    width: 34%;
   }
 
   .album-grid :global(.album-meta h2) {

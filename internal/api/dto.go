@@ -73,6 +73,10 @@ type PhotosResponse struct {
 	Pagination Pagination `json:"pagination"`
 }
 
+type PhotoResponse struct {
+	Photo Photo `json:"photo"`
+}
+
 type ErrorResponse struct {
 	Error ErrorBody `json:"error"`
 }
