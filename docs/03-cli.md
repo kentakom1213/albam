@@ -155,6 +155,8 @@ brand = "albam"
 home_title = "My Albums"
 home_eyebrow = "PHOTO ALBUM"
 home_description = "写真をディレクトリやタグごとに眺められるアルバムです。"
+album_grid_columns = 5
+photo_grid_columns = 6
 
 [params.nav]
 albums = "Albums"

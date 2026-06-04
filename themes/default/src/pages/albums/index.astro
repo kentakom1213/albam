@@ -9,7 +9,11 @@ const theme = getThemeConfig();
 <Layout title={`${theme.siteTitle} | Album`}>
   <Header />
 
-  <main class="page-shell detail-page" data-site-title={theme.siteTitle}>
+  <main
+    class="page-shell detail-page"
+    data-site-title={theme.siteTitle}
+    style={`--photo-grid-columns: ${theme.layout.photoGridColumns}; --photo-grid-columns-tablet: ${theme.layout.photoGridColumnsTablet}; --photo-grid-columns-mobile: ${theme.layout.photoGridColumnsMobile};`}
+  >
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href="/">Albums</a>
       <span>/</span>
@@ -21,7 +25,6 @@ const theme = getThemeConfig();
       <div class="hero-content">
         <h1 id="album-title" class="page-title">Loading</h1>
         <p class="lead" id="album-description"></p>
-        <div class="meta-chips" id="meta-chips" aria-label="Album metadata"></div>
       </div>
 
       <div class="actions">
@@ -30,16 +33,16 @@ const theme = getThemeConfig();
       </div>
     </section>
 
-    <section class="photos-section" aria-labelledby="photos-title">
-      <div class="photos-toolbar">
-        <h2 id="photos-title">Photos</h2>
-        <div class="toolbar-chips" aria-label="Photo filters">
-          <span class="chip active small">All</span>
-          <span class="chip small">Favorites</span>
-          <span class="chip small">Newest</span>
-        </div>
+    <div class="album-controls">
+      <div class="meta-chips" id="meta-chips" aria-label="Album metadata"></div>
+      <div class="toolbar-chips" aria-label="Photo filters">
+        <span class="chip active small">All</span>
+        <span class="chip small">Favorites</span>
+        <span class="chip small">Newest</span>
       </div>
+    </div>
 
+    <section class="photos-section" aria-label="Photos">
       <div class="photo-grid" id="photo-grid">
         <p class="load-state">Loading photos...</p>
       </div>
@@ -92,16 +95,11 @@ const theme = getThemeConfig();
 
   function photoCard(photo: Photo, index: number) {
     const tone = photo.tone ?? tones[index % tones.length];
-    const selected = index === 1;
 
     return `
-      <article class="photo-card ${selected ? "selected" : ""}">
+      <article class="photo-card">
         <div class="photo-image">
           ${imageHTML(photo.src, tone, photo.title)}
-        </div>
-        <div class="photo-title">
-          <span>${escapeHTML(photo.title)}</span>
-          ${selected ? `<span class="dot" aria-hidden="true"></span>` : ""}
         </div>
       </article>
     `;
@@ -181,8 +179,8 @@ const theme = getThemeConfig();
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 34px;
-    align-items: end;
-    margin-bottom: 74px;
+    align-items: start;
+    margin-bottom: 38px;
   }
 
   .hero-content {
@@ -204,52 +202,31 @@ const theme = getThemeConfig();
     line-height: 1.7;
   }
 
+  .album-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
   .meta-chips,
-  .actions {
+  .actions,
+  .toolbar-chips {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
   }
 
-  .meta-chips {
-    margin-top: 36px;
-  }
-
   .actions {
     align-items: center;
     justify-content: flex-end;
-    margin-bottom: 2px;
-  }
-
-  .photos-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 66px;
-    margin-bottom: 34px;
-    padding: 0 23px;
-    border: 1px solid var(--theme-border);
-    border-radius: 20px;
-    background: var(--theme-surface);
-  }
-
-  .photos-toolbar h2 {
-    margin: 0;
-    color: var(--theme-text);
-    font-size: 27px;
-    font-weight: 900;
-  }
-
-  .toolbar-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
   }
 
   .photo-grid {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 18px 54px;
+    grid-template-columns: repeat(var(--photo-grid-columns), minmax(0, 1fr));
+    gap: 8px 10px;
   }
 
   .load-state {
@@ -343,39 +320,15 @@ const theme = getThemeConfig();
   }
 
   :global(.photo-card) {
-    padding: 8px 8px 12px;
+    padding: 8px;
     border: 1px solid var(--theme-border);
     border-radius: var(--radius-card);
     background: var(--theme-surface);
     overflow: hidden;
   }
 
-  :global(.photo-card.selected) {
-    border-color: var(--theme-current-accent);
-    box-shadow: inset 0 0 0 1px var(--theme-current-accent);
-  }
-
   :global(.photo-image) {
     aspect-ratio: 1;
-  }
-
-  :global(.photo-title) {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    min-height: 39px;
-    padding: 10px 2px 0;
-    color: var(--theme-muted);
-    font-size: 14px;
-    font-weight: 500;
-  }
-
-  :global(.photo-title span:first-child) {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   :global(.peach) {
@@ -490,15 +443,15 @@ const theme = getThemeConfig();
 
   @media (max-width: 1120px) {
     .photo-grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 18px;
+      grid-template-columns: repeat(var(--photo-grid-columns-tablet), minmax(0, 1fr));
+      gap: 10px;
     }
   }
 
   @media (max-width: 900px) {
     .album-hero {
       display: block;
-      margin-bottom: 42px;
+      margin-bottom: 24px;
     }
 
     .hero-content .page-title {
@@ -515,8 +468,8 @@ const theme = getThemeConfig();
     }
 
     .photo-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(var(--photo-grid-columns-tablet), minmax(0, 1fr));
+      gap: 10px;
     }
   }
 
@@ -543,19 +496,9 @@ const theme = getThemeConfig();
       font-size: 18px;
     }
 
-    .meta-chips {
-      margin-top: 20px;
-    }
-
-    .photos-toolbar {
+    .album-controls {
+      display: block;
       margin-bottom: 18px;
-      padding: 0;
-      border: 0;
-      background: transparent;
-    }
-
-    .photos-toolbar h2 {
-      font-size: 25px;
     }
 
     .toolbar-chips {
@@ -563,8 +506,8 @@ const theme = getThemeConfig();
     }
 
     .photo-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
+      grid-template-columns: repeat(var(--photo-grid-columns-mobile), minmax(0, 1fr));
+      gap: 10px;
       padding-bottom: 24px;
     }
   }

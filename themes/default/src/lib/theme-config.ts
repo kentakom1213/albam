@@ -7,6 +7,14 @@ export type ThemeConfig = {
   homeTitle: string;
   homeEyebrow: string;
   homeDescription: string;
+  layout: {
+    albumGridColumns: number;
+    albumGridColumnsTablet: number;
+    albumGridColumnsMobile: number;
+    photoGridColumns: number;
+    photoGridColumnsTablet: number;
+    photoGridColumnsMobile: number;
+  };
   nav: {
     albums: string;
     tags: string;
@@ -21,6 +29,8 @@ type RawThemeConfig = {
     home_title?: string;
     home_eyebrow?: string;
     home_description?: string;
+    album_grid_columns?: number;
+    photo_grid_columns?: number;
     nav?: {
       albums?: string;
       tags?: string;
@@ -29,7 +39,7 @@ type RawThemeConfig = {
   };
 };
 
-type TomlObject = Record<string, string | TomlObject>;
+type TomlObject = Record<string, string | number | TomlObject>;
 
 const defaults: ThemeConfig = {
   siteTitle: "albam",
@@ -37,6 +47,14 @@ const defaults: ThemeConfig = {
   homeTitle: "Your Albums",
   homeEyebrow: "SELF-HOSTED PHOTO ALBUM",
   homeDescription: "写真をディレクトリやタグごとに，シンプルで可愛いグリッドとして眺められるアルバムです。",
+  layout: {
+    albumGridColumns: 5,
+    albumGridColumnsTablet: 3,
+    albumGridColumnsMobile: 2,
+    photoGridColumns: 6,
+    photoGridColumnsTablet: 3,
+    photoGridColumnsMobile: 2,
+  },
   nav: {
     albums: "Albums",
     tags: "Tags",
@@ -47,6 +65,8 @@ const defaults: ThemeConfig = {
 export function getThemeConfig(): ThemeConfig {
   const raw = parseThemeToml(readFileSync(join(process.cwd(), "theme.toml"), "utf8"));
   const params = raw.params ?? {};
+  const albumGridColumns = numberValue(params.album_grid_columns, defaults.layout.albumGridColumns, 1, 8);
+  const photoGridColumns = numberValue(params.photo_grid_columns, defaults.layout.photoGridColumns, 1, 10);
 
   return {
     siteTitle: stringValue(raw.title, defaults.siteTitle),
@@ -54,6 +74,14 @@ export function getThemeConfig(): ThemeConfig {
     homeTitle: stringValue(params.home_title, defaults.homeTitle),
     homeEyebrow: stringValue(params.home_eyebrow, defaults.homeEyebrow),
     homeDescription: stringValue(params.home_description, defaults.homeDescription),
+    layout: {
+      albumGridColumns,
+      albumGridColumnsTablet: Math.min(albumGridColumns, defaults.layout.albumGridColumnsTablet),
+      albumGridColumnsMobile: Math.min(albumGridColumns, defaults.layout.albumGridColumnsMobile),
+      photoGridColumns,
+      photoGridColumnsTablet: Math.min(photoGridColumns, defaults.layout.photoGridColumnsTablet),
+      photoGridColumnsMobile: Math.min(photoGridColumns, defaults.layout.photoGridColumnsMobile),
+    },
     nav: {
       albums: stringValue(params.nav?.albums, defaults.nav.albums),
       tags: stringValue(params.nav?.tags, defaults.nav.tags),
@@ -64,6 +92,12 @@ export function getThemeConfig(): ThemeConfig {
 
 function stringValue(value: unknown, fallback: string) {
   return typeof value === "string" && value !== "" ? value : fallback;
+}
+
+function numberValue(value: unknown, fallback: number, min: number, max: number) {
+  return typeof value === "number" && Number.isInteger(value)
+    ? Math.min(Math.max(value, min), max)
+    : fallback;
 }
 
 function parseThemeToml(source: string): RawThemeConfig {
@@ -83,18 +117,22 @@ function parseThemeToml(source: string): RawThemeConfig {
       continue;
     }
 
-    const assignmentMatch = trimmed.match(/^([A-Za-z0-9_-]+)\s*=\s*"((?:\\"|[^"])*)"$/);
-    if (!assignmentMatch) {
+    const stringMatch = trimmed.match(/^([A-Za-z0-9_-]+)\s*=\s*"((?:\\"|[^"])*)"$/);
+    if (stringMatch) {
+      assignValue(parsed, section, stringMatch[1], stringMatch[2].replace(/\\"/g, '"'));
       continue;
     }
 
-    assignValue(parsed, section, assignmentMatch[1], assignmentMatch[2].replace(/\\"/g, '"'));
+    const numberMatch = trimmed.match(/^([A-Za-z0-9_-]+)\s*=\s*([0-9]+)$/);
+    if (numberMatch) {
+      assignValue(parsed, section, numberMatch[1], Number.parseInt(numberMatch[2], 10));
+    }
   }
 
   return parsed as RawThemeConfig;
 }
 
-function assignValue(target: TomlObject, section: string[], key: string, value: string) {
+function assignValue(target: TomlObject, section: string[], key: string, value: string | number) {
   let current = target;
 
   for (const segment of section) {
