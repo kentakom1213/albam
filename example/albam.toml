@@ -17,4 +17,4 @@ out_dir = ".albam/public"
 
 [theme]
 name = "default"
-dir = "../../albam-frontend/themes/default"
+dir = "../themes/default"
