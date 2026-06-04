@@ -114,6 +114,44 @@ GROUP BY albums.id
 	return &album, nil
 }
 
+func (s *Storage) GetAssetByID(id int64) (*AssetRow, error) {
+	var asset AssetRow
+
+	err := s.db.QueryRow(`
+SELECT
+    id,
+    album_id,
+    path,
+    filename,
+    ext,
+    size_bytes,
+    file_mtime,
+    created_at,
+    updated_at
+FROM assets
+WHERE id = ?
+`, id).Scan(
+		&asset.ID,
+		&asset.AlbumID,
+		&asset.Path,
+		&asset.Filename,
+		&asset.Ext,
+		&asset.Size,
+		&asset.ModTime,
+		&asset.CreatedAt,
+		&asset.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return &asset, nil
+}
+
 func (s *Storage) ListAssetsByAlbumSlug(slug string, limit, offset int) ([]AssetRow, int, error) {
 	total, err := s.countAssetsByAlbumSlug(slug)
 	if err != nil {

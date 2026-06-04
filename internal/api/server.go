@@ -25,5 +25,8 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/api/albums", s.handleListAlbums)
 	mux.HandleFunc("/api/albums/", s.handleAlbumSubroutes)
 
+	mediaHandler := NewMediaHandler(s.store, s.cfg.Media.SourceDir, s.cfg.Media.CacheDir)
+	mux.HandleFunc("/media/photos/", mediaHandler.ServeHTTP)
+
 	return mux
 }

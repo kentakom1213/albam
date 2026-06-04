@@ -116,7 +116,7 @@ func runIndex(args []string) error {
 		return err
 	}
 
-	if err := os.MkdirAll(filepath.Dir(cfg.Database.Path), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(cfg.Database.Path), 0o755); err != nil {
 		return err
 	}
 
@@ -154,7 +154,7 @@ func runServe(args []string) error {
 		}
 	}
 
-	if err := os.MkdirAll(filepath.Dir(cfg.Database.Path), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(cfg.Database.Path), 0o755); err != nil {
 		return err
 	}
 
