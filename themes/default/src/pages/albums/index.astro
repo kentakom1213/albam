@@ -14,11 +14,10 @@ const theme = getThemeConfig();
     data-site-title={theme.siteTitle}
     style={`--photo-grid-columns: ${theme.layout.photoGridColumns}; --photo-grid-columns-tablet: ${theme.layout.photoGridColumnsTablet}; --photo-grid-columns-mobile: ${theme.layout.photoGridColumnsMobile};`}
   >
-    <nav class="breadcrumb" aria-label="Breadcrumb">
+    <nav class="breadcrumb" id="album-breadcrumbs" aria-label="Breadcrumb">
       <a href="/">Albums</a>
-      <span>/</span>
-      <span id="breadcrumb-kind">Album</span>
-      <strong id="breadcrumb-title">Loading</strong>
+      <span class="separator" aria-hidden="true">/</span>
+      <span aria-current="page">Loading</span>
     </nav>
 
     <section class="album-hero" aria-labelledby="album-title">
@@ -60,8 +59,8 @@ const theme = getThemeConfig();
 </Layout>
 
 <script>
-  import { formatCompactDate, formatCompactMonth, getAlbum, getAlbumPhotos } from "../../lib/api";
-  import type { Album, Photo } from "../../lib/api";
+  import { formatCompactDate, formatCompactMonth, getAlbum, getAlbumPhotosWithPagination } from "../../lib/api";
+  import type { Album, Breadcrumb, Photo } from "../../lib/api";
 
   const tones = ["peach", "linen", "mint", "sky", "lilac", "lemon"] as const;
   const siteTitle =
@@ -131,6 +130,35 @@ const theme = getThemeConfig();
     }
   }
 
+  function breadcrumbItemHTML(item: Breadcrumb, isCurrent: boolean) {
+    const title = escapeHTML(item.title);
+
+    if (isCurrent) {
+      return `<span aria-current="page">${title}</span>`;
+    }
+
+    return `<a href="${escapeHTML(item.href)}">${title}</a>`;
+  }
+
+  function renderBreadcrumbs(album: Album) {
+    const breadcrumbs = document.querySelector<HTMLElement>("#album-breadcrumbs");
+    if (!breadcrumbs) {
+      return;
+    }
+
+    const items = album.breadcrumbs.length
+      ? album.breadcrumbs
+      : [{ id: album.id, title: album.title, path: album.id, href: `/albums/${album.id}/` }];
+
+    breadcrumbs.innerHTML = [
+      `<a href="/">Albums</a>`,
+      ...items.flatMap((item, index) => [
+        `<span class="separator" aria-hidden="true">/</span>`,
+        breadcrumbItemHTML(item, index === items.length - 1),
+      ]),
+    ].join("");
+  }
+
   async function renderAlbum() {
     const albumId = currentAlbumId();
     const photoGrid = document.querySelector<HTMLElement>("#photo-grid");
@@ -143,13 +171,16 @@ const theme = getThemeConfig();
     }
 
     try {
-      const [album, photos] = await Promise.all([getAlbum(albumId), getAlbumPhotos(albumId)]);
+      const [album, photosResult] = await Promise.all([
+        getAlbum(albumId),
+        getAlbumPhotosWithPagination(albumId),
+      ]);
+      const { photos, pagination } = photosResult;
       const visibleDate = formatCompactDate(album.createdAt);
       const shortDate = formatCompactMonth(album.createdAt);
 
       document.title = `${siteTitle} | ${album.title}`;
-      setText("#breadcrumb-kind", album.kind.replace(" ALBUM", ""));
-      setText("#breadcrumb-title", album.title);
+      renderBreadcrumbs(album);
       setText("#album-title", album.title);
       setText("#album-description", album.description);
 
@@ -158,7 +189,7 @@ const theme = getThemeConfig();
       if (metaChips) {
         metaChips.style.setProperty("--short-date", `"${shortDate}"`);
         metaChips.innerHTML = `
-          <span class="chip active">${album.photoCount.toLocaleString("en-US")} photos</span>
+          <span class="chip active">${pagination.total.toLocaleString("en-US")} photos</span>
           <span class="chip">${escapeHTML(visibleDate)}</span>
         `;
       }
@@ -246,6 +277,7 @@ const theme = getThemeConfig();
   .breadcrumb {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 4px;
     margin-bottom: 48px;
     color: var(--theme-muted);
@@ -253,7 +285,16 @@ const theme = getThemeConfig();
     font-weight: 600;
   }
 
-  .breadcrumb strong {
+  .breadcrumb a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--theme-text);
+  }
+
+  .breadcrumb [aria-current="page"] {
     color: var(--theme-text);
   }
 
@@ -641,7 +682,7 @@ const theme = getThemeConfig();
       font-size: 15px;
     }
 
-    .breadcrumb strong {
+    .breadcrumb [aria-current="page"] {
       display: none;
     }
 

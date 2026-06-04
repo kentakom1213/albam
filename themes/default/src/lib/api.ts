@@ -1,3 +1,12 @@
+export type ApiBreadcrumb = {
+  id: string;
+  title: string;
+  path: string;
+  links: {
+    self: string;
+  };
+};
+
 export type ApiAlbum = {
   id: string;
   title: string;
@@ -8,6 +17,7 @@ export type ApiAlbum = {
   photo_count: number;
   cover_photo_id: string | null;
   visibility: "public" | "private";
+  breadcrumbs: ApiBreadcrumb[];
   links: {
     self: string;
     photos: string;
@@ -41,6 +51,13 @@ export type Pagination = {
   has_next: boolean;
 };
 
+export type Breadcrumb = {
+  id: string;
+  title: string;
+  path: string;
+  href: string;
+};
+
 export type Album = {
   id: string;
   title: string;
@@ -51,6 +68,7 @@ export type Album = {
   updatedAt: string;
   size: string;
   visibility: "public" | "private";
+  breadcrumbs: Breadcrumb[];
   coverSrc?: string;
   tone?: "peach" | "linen" | "mint" | "sky" | "lilac" | "lemon";
 };
@@ -63,6 +81,11 @@ export type Photo = {
   previewSrc?: string;
   originalSrc?: string;
   tone?: Album["tone"];
+};
+
+export type AlbumPhotosResult = {
+  photos: Photo[];
+  pagination: Pagination;
 };
 
 type AlbumsResponse = {
@@ -181,6 +204,15 @@ export function formatCompactMonth(value: string | null | undefined) {
   return compact === "-" ? compact : compact.split(".").slice(0, 2).join(".");
 }
 
+function toBreadcrumb(breadcrumb: ApiBreadcrumb): Breadcrumb {
+  return {
+    id: breadcrumb.id,
+    title: breadcrumb.title,
+    path: breadcrumb.path,
+    href: breadcrumb.links.self,
+  };
+}
+
 export function toAlbum(album: ApiAlbum, index = 0): Album {
   return {
     id: album.id,
@@ -192,6 +224,7 @@ export function toAlbum(album: ApiAlbum, index = 0): Album {
     updatedAt: formatDate(album.updated_at),
     size: "-",
     visibility: album.visibility,
+    breadcrumbs: album.breadcrumbs.map(toBreadcrumb),
     coverSrc: resolveAssetUrl(album.links.cover),
     tone: tones[index % tones.length],
   };
@@ -219,10 +252,18 @@ export async function getAlbum(albumId: string): Promise<Album> {
   return toAlbum(body.album);
 }
 
-export async function getAlbumPhotos(albumId: string): Promise<Photo[]> {
+export async function getAlbumPhotosWithPagination(albumId: string): Promise<AlbumPhotosResult> {
   const body = await request<PhotosResponse>(`albums/${albumId}/photos`, {
     limit: 100,
     offset: 0,
   });
-  return body.photos.map(toPhoto);
+  return {
+    photos: body.photos.map(toPhoto),
+    pagination: body.pagination,
+  };
+}
+
+export async function getAlbumPhotos(albumId: string): Promise<Photo[]> {
+  const body = await getAlbumPhotosWithPagination(albumId);
+  return body.photos;
 }
