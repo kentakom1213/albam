@@ -6,13 +6,14 @@ import (
 )
 
 type AlbumRow struct {
-	ID         int64
-	Path       string
-	Slug       string
-	Title      string
-	CreatedAt  string
-	UpdatedAt  string
-	PhotoCount int
+	ID           int64
+	Path         string
+	Slug         string
+	Title        string
+	CreatedAt    string
+	UpdatedAt    string
+	PhotoCount   int
+	CoverPhotoID sql.NullInt64
 }
 
 type AssetRow struct {
@@ -41,7 +42,8 @@ SELECT
 	albums.title,
 	albums.created_at,
 	albums.updated_at,
-	COUNT(assets.id) AS photo_count
+	COUNT(assets.id) AS photo_count,
+	MIN(assets.id) AS cover_photo_id
 FROM albums
 LEFT JOIN assets ON assets.album_id = albums.id
 GROUP BY albums.id
@@ -64,6 +66,7 @@ LIMIT ? OFFSET ?
 			&album.CreatedAt,
 			&album.UpdatedAt,
 			&album.PhotoCount,
+			&album.CoverPhotoID,
 		); err != nil {
 			return nil, 0, err
 		}
@@ -89,7 +92,8 @@ SELECT
     albums.title,
     albums.created_at,
     albums.updated_at,
-    COUNT(assets.id) AS photo_count
+    COUNT(assets.id) AS photo_count,
+	MIN(assets.id) AS cover_photo_id
 FROM albums
 LEFT JOIN assets ON assets.album_id = albums.id
 WHERE albums.slug = ?
@@ -102,6 +106,7 @@ GROUP BY albums.id
 		&album.CreatedAt,
 		&album.UpdatedAt,
 		&album.PhotoCount,
+		&album.CoverPhotoID,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
