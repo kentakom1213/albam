@@ -1,0 +1,63 @@
+---
+import ImagePlaceholder from "./ImagePlaceholder.astro";
+import type { Photo } from "../lib/api";
+
+type Props = {
+  photo: Photo;
+  selected?: boolean;
+};
+
+const { photo, selected = false } = Astro.props;
+---
+
+<article class:list={["photo-card", { selected }]}>
+  <div class="photo-image">
+    <ImagePlaceholder src={photo.src} tone={photo.tone} alt={photo.title} />
+  </div>
+  <div class="photo-title">
+    <span>{photo.title}</span>
+    {selected && <span class="dot" aria-hidden="true"></span>}
+  </div>
+</article>
+
+<style>
+  .photo-card {
+    padding: 8px 8px 12px;
+    border: 1px solid var(--theme-border);
+    border-radius: var(--radius-card);
+    background: var(--theme-surface);
+    overflow: hidden;
+  }
+
+  .photo-card.selected {
+    border-color: var(--theme-current-accent);
+    box-shadow: inset 0 0 0 1px var(--theme-current-accent);
+  }
+
+  .photo-image {
+    aspect-ratio: 1;
+  }
+
+  .photo-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 39px;
+    padding: 10px 2px 0;
+    color: var(--theme-muted);
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .photo-title span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .dot {
+    flex: 0 0 auto;
+  }
+</style>

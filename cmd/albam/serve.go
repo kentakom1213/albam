@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/kentakom1213/albam/internal/api"
@@ -50,6 +51,10 @@ func runServe(args []string) error {
 	dbPath := cfg.Database.Path
 	if dbPath == "" {
 		dbPath = ".albam/db.sqlite"
+	}
+
+	if err := os.MkdirAll(filepath.Dir(dbPath), 0o755); err != nil {
+		return err
 	}
 
 	store, err := storage.Open(dbPath)

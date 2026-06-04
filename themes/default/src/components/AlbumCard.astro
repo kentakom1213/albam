@@ -1,0 +1,85 @@
+---
+import ImagePlaceholder from "./ImagePlaceholder.astro";
+import type { Album } from "../lib/api";
+
+type Props = {
+  album: Album;
+};
+
+const { album } = Astro.props;
+---
+
+<a class="album-card" href={`/albums/${album.id}/`}>
+  <div class="album-image">
+    <ImagePlaceholder src={album.coverSrc} tone={album.tone} alt={`${album.title} cover`} />
+  </div>
+  <div class="album-meta">
+    <div>
+      <h2>{album.title}</h2>
+      <p>{album.photoCount} photos</p>
+    </div>
+    <span class="dot" aria-hidden="true"></span>
+  </div>
+</a>
+
+<style>
+  .album-card {
+    display: block;
+    padding: 10px 10px 18px;
+    border: 1px solid var(--theme-border);
+    border-radius: var(--radius-card);
+    background: var(--theme-surface);
+    box-shadow: var(--shadow-card);
+  }
+
+  .album-card:focus-visible {
+    outline: 2px solid var(--theme-current-accent);
+    outline-offset: 4px;
+  }
+
+  .album-image {
+    aspect-ratio: 1;
+  }
+
+  .album-meta {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 27px 4px 0;
+  }
+
+  h2 {
+    margin: 0;
+    color: var(--theme-text);
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  p {
+    margin: 8px 0 0;
+    color: var(--theme-muted);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .dot {
+    flex: 0 0 auto;
+    margin-top: 4px;
+  }
+
+  @media (max-width: 640px) {
+    .album-card {
+      padding: 9px 9px 18px;
+    }
+
+    .album-meta {
+      padding-top: 27px;
+    }
+
+    h2 {
+      font-size: 16px;
+    }
+  }
+</style>

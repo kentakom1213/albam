@@ -1,0 +1,41 @@
+---
+type Props = {
+  label: string;
+  active?: boolean;
+  small?: boolean;
+};
+
+const { label, active = false, small = false } = Astro.props;
+---
+
+<span class:list={["chip", { active, small }]}>{label}</span>
+
+<style>
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 0 17px;
+    border: 1px solid var(--theme-border);
+    border-radius: var(--radius-pill);
+    background: var(--theme-surface);
+    color: var(--theme-muted);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .chip.active {
+    border-color: var(--theme-current-accent);
+    background: var(--theme-current-accent-soft);
+    color: var(--theme-text);
+  }
+
+  .chip.small {
+    min-height: 30px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+</style>

@@ -59,7 +59,7 @@ func Default() Config {
 			OutDir: ".albam/public",
 		},
 		Theme: ThemeConfig{
-			Dir: "theme/default",
+			Dir: "themes/default",
 		},
 	}
 }

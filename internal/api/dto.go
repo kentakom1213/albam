@@ -70,6 +70,10 @@ type PhotosResponse struct {
 	Pagination Pagination `json:"pagination"`
 }
 
+type TagsResponse struct {
+	Tags []Tag `json:"tags"`
+}
+
 type ErrorResponse struct {
 	Error ErrorBody `json:"error"`
 }

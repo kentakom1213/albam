@@ -42,6 +42,7 @@ func (s *Server) RoutesWithStatic(publicDir string) (http.Handler, error) {
 func (s *Server) registerDynamicRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/albums", s.handleListAlbums)
 	mux.HandleFunc("/api/albums/", s.handleAlbumSubroutes)
+	mux.HandleFunc("/api/tags", s.handleListTags)
 
 	mediaHandler := NewMediaHandler(s.store, s.cfg.Media.SourceDir, s.cfg.Media.CacheDir)
 	mux.HandleFunc("/media/photos/", mediaHandler.ServeHTTP)

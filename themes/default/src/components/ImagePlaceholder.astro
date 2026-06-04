@@ -1,0 +1,236 @@
+---
+type Props = {
+  src?: string;
+  alt?: string;
+  tone?: "peach" | "linen" | "mint" | "sky" | "lilac" | "lemon";
+  collage?: boolean;
+};
+
+const { src, alt = "", tone = "peach", collage = false } = Astro.props;
+---
+
+{
+  src ? (
+    <img class="image" src={src} alt={alt} loading="lazy" />
+  ) : (
+    <div class:list={["placeholder", tone, { collage }]} role="img" aria-label={alt}>
+      <span class="circle-large"></span>
+      <span class="circle-corner"></span>
+      <span class="accent-mark"></span>
+      <span class="soft-square"></span>
+      <span class="stripe stripe-one"></span>
+      <span class="stripe stripe-two"></span>
+    </div>
+  )
+}
+
+<style>
+  .image,
+  .placeholder {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 12px;
+  }
+
+  .image {
+    object-fit: cover;
+  }
+
+  .placeholder {
+    position: relative;
+    background: var(--ph-bg);
+  }
+
+  .peach {
+    --ph-bg: #f9cdb9;
+    --ph-circle: #fde6dc;
+    --ph-corner: #f7a99e;
+    --ph-square: #fff5ee;
+    --ph-line: rgb(17 17 17 / 62%);
+  }
+
+  .linen {
+    --ph-bg: #e8ddcf;
+    --ph-circle: #f6efe6;
+    --ph-corner: #c9beb2;
+    --ph-square: #faf5ed;
+    --ph-line: rgb(17 17 17 / 58%);
+  }
+
+  .mint {
+    --ph-bg: #c6eadc;
+    --ph-circle: #e9f6e6;
+    --ph-corner: #a9cdbf;
+    --ph-square: #e1f5ee;
+    --ph-line: rgb(17 17 17 / 32%);
+  }
+
+  .sky {
+    --ph-bg: #c7e1f2;
+    --ph-circle: #e6f3fb;
+    --ph-corner: #d4b9c8;
+    --ph-square: #e4f3f8;
+    --ph-line: rgb(17 17 17 / 62%);
+  }
+
+  .lilac {
+    --ph-bg: #d9cff1;
+    --ph-circle: #eee8fa;
+    --ph-corner: #dcb0c5;
+    --ph-square: #eee8fb;
+    --ph-line: rgb(17 17 17 / 52%);
+  }
+
+  .lemon {
+    --ph-bg: #f7e9a1;
+    --ph-circle: #fff8c8;
+    --ph-corner: #f5bf86;
+    --ph-square: #fff7d7;
+    --ph-line: rgb(17 17 17 / 22%);
+  }
+
+  .circle-large,
+  .circle-corner,
+  .accent-mark,
+  .soft-square,
+  .stripe {
+    position: absolute;
+    display: block;
+  }
+
+  .circle-large {
+    left: -24%;
+    bottom: -7%;
+    width: 78%;
+    aspect-ratio: 1;
+    border-radius: var(--radius-pill);
+    background: var(--ph-circle);
+    opacity: 0.86;
+  }
+
+  .circle-corner {
+    right: -18%;
+    top: -10%;
+    width: 46%;
+    aspect-ratio: 1;
+    border-radius: var(--radius-pill);
+    background: var(--ph-corner);
+    opacity: 0.86;
+  }
+
+  .accent-mark {
+    left: 13%;
+    top: 14%;
+    width: 20%;
+    max-width: 42px;
+    aspect-ratio: 1;
+    border-radius: var(--radius-pill);
+    background: var(--theme-current-accent);
+  }
+
+  .soft-square {
+    left: 14%;
+    top: 11%;
+    width: 32%;
+    aspect-ratio: 1;
+    border-radius: 20px;
+    background: var(--ph-square);
+    opacity: 0;
+  }
+
+  .stripe {
+    left: 10%;
+    bottom: 14%;
+    width: 36%;
+    height: 8%;
+    border-radius: var(--radius-pill);
+    background: var(--ph-line);
+  }
+
+  .stripe-two {
+    display: none;
+  }
+
+  .linen .accent-mark,
+  .lilac .accent-mark {
+    left: auto;
+    right: 12%;
+    top: 14%;
+    width: 0;
+    height: 0;
+    border-right: 11px solid transparent;
+    border-bottom: 8px solid var(--theme-current-accent);
+    border-left: 11px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    transform: rotate(35deg);
+  }
+
+  .linen .accent-mark::before,
+  .linen .accent-mark::after,
+  .lilac .accent-mark::before,
+  .lilac .accent-mark::after {
+    position: absolute;
+    top: 7px;
+    left: -11px;
+    border-right: 11px solid transparent;
+    border-bottom: 8px solid var(--theme-current-accent);
+    border-left: 11px solid transparent;
+    content: "";
+  }
+
+  .linen .accent-mark::before,
+  .lilac .accent-mark::before {
+    transform: rotate(72deg);
+  }
+
+  .linen .accent-mark::after,
+  .lilac .accent-mark::after {
+    transform: rotate(-72deg);
+  }
+
+  .mint .circle-large,
+  .lemon .circle-large,
+  .peach .soft-square {
+    opacity: 0;
+  }
+
+  .mint .stripe,
+  .lemon .stripe,
+  .sky.collage .stripe {
+    left: 0;
+    bottom: 14%;
+    width: 100%;
+    height: 10%;
+    border-radius: 0;
+    background: rgb(255 255 255 / 45%);
+  }
+
+  .mint .stripe-two,
+  .lemon .stripe-two,
+  .sky.collage .stripe-two {
+    display: block;
+    left: 0;
+    bottom: 24%;
+    width: 100%;
+    height: 10%;
+    border-radius: 0;
+    background: rgb(255 255 255 / 30%);
+  }
+
+  .linen .soft-square,
+  .sky .soft-square {
+    opacity: 0.8;
+  }
+
+  .linen .circle-large,
+  .sky .circle-large {
+    left: -18%;
+    bottom: -2%;
+  }
+
+  .collage {
+    border-radius: var(--radius-card);
+  }
+</style>
