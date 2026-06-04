@@ -71,7 +71,9 @@ func (h *StaticHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	info, err := os.Stat(filePath)
 	if err != nil {
-		http.NotFound(w, r)
+		if !h.serveAlbumShell(w, r, urlPath) {
+			http.NotFound(w, r)
+		}
 		return
 	}
 
@@ -87,6 +89,26 @@ func (h *StaticHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	setStaticCacheHeader(w, urlPath)
 	http.ServeFile(w, r, filePath)
+}
+
+func (h *StaticHandler) serveAlbumShell(w http.ResponseWriter, r *http.Request, urlPath string) bool {
+	if urlPath != "/albums" && !strings.HasPrefix(urlPath, "/albums/") {
+		return false
+	}
+
+	filePath, err := resolveStaticPath(h.root, "albums/index.html")
+	if err != nil {
+		return false
+	}
+
+	info, err := os.Stat(filePath)
+	if err != nil || info.IsDir() {
+		return false
+	}
+
+	setStaticCacheHeader(w, "/albums/index.html")
+	http.ServeFile(w, r, filePath)
+	return true
 }
 
 func resolveStaticPath(root string, rel string) (string, error) {

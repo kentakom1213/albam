@@ -1,18 +1,7 @@
 ---
-import AlbumCard from "../components/AlbumCard.astro";
 import Chip from "../components/Chip.astro";
 import Header from "../components/Header.astro";
 import Layout from "../components/Layout.astro";
-import { getAlbums, getTags } from "../lib/api";
-
-const albums = await getAlbums();
-const tags = await getTags().catch(() => [
-  { id: "favorites", name: "Favorites" },
-  { id: "travel", name: "Travel" },
-  { id: "daily", name: "Daily" },
-  { id: "family", name: "Family" },
-]);
-const totalPhotos = albums.reduce((sum, album) => sum + album.photoCount, 0);
 ---
 
 <Layout title="albam | Your Albums">
@@ -32,27 +21,110 @@ const totalPhotos = albums.reduce((sum, album) => sum + album.photoCount, 0);
           白と黒をベースに，写真が主役になる<br />
           小さなアルバム UI。
         </p>
-        <div class="chip-row" aria-label="Album filters">
+        <div class="chip-row" id="tag-list" aria-label="Album filters">
           <Chip label="All" active />
-          {tags.slice(0, 4).map((tag) => <Chip label={tag.name} />)}
         </div>
       </div>
 
       <aside class="stats-card" aria-label="Photo sync status">
         <div>
           <p>Photos</p>
-          <strong>{totalPhotos.toLocaleString("en-US")}</strong>
+          <strong id="photo-total">0</strong>
           <span>Synced locally</span>
         </div>
         <span class="stats-mark" aria-hidden="true"></span>
       </aside>
     </section>
 
-    <section class="album-grid" aria-label="Albums">
-      {albums.map((album) => <AlbumCard album={album} />)}
+    <section class="album-grid" id="album-grid" aria-label="Albums">
+      <p class="load-state">Loading albums...</p>
     </section>
   </main>
 </Layout>
+
+<script>
+  import { getAlbums, getTags } from "../lib/api";
+  import type { Album } from "../lib/api";
+
+  const tones = ["peach", "linen", "mint", "sky", "lilac", "lemon"] as const;
+  const albumGrid = document.querySelector<HTMLElement>("#album-grid");
+  const tagList = document.querySelector<HTMLElement>("#tag-list");
+  const photoTotal = document.querySelector<HTMLElement>("#photo-total");
+
+  function escapeHTML(value: string) {
+    return value.replace(/[&<>"']/g, (char) => {
+      const entities: Record<string, string> = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      };
+      return entities[char];
+    });
+  }
+
+  function imageHTML(src: string | undefined, tone: Album["tone"], alt: string) {
+    if (src) {
+      return `<img class="image" src="${escapeHTML(src)}" alt="${escapeHTML(alt)}" loading="lazy" />`;
+    }
+
+    return `
+      <div class="placeholder ${tone ?? "peach"}" role="img" aria-label="${escapeHTML(alt)}">
+        <span class="circle-large"></span>
+        <span class="circle-corner"></span>
+        <span class="accent-mark"></span>
+        <span class="soft-square"></span>
+        <span class="stripe stripe-one"></span>
+        <span class="stripe stripe-two"></span>
+      </div>
+    `;
+  }
+
+  function albumCard(album: Album, index: number) {
+    const tone = album.tone ?? tones[index % tones.length];
+
+    return `
+      <a class="album-card" href="/albums/${encodeURIComponent(album.id)}/">
+        <div class="album-image">
+          ${imageHTML(album.coverSrc, tone, `${album.title} cover`)}
+        </div>
+        <div class="album-meta">
+          <div>
+            <h2>${escapeHTML(album.title)}</h2>
+            <p>${album.photoCount.toLocaleString("en-US")} photos</p>
+          </div>
+          <span class="dot" aria-hidden="true"></span>
+        </div>
+      </a>
+    `;
+  }
+
+  async function renderHome() {
+    if (!albumGrid || !tagList || !photoTotal) {
+      return;
+    }
+
+    try {
+      const [albums, tags] = await Promise.all([getAlbums(), getTags().catch(() => [])]);
+      const total = albums.reduce((sum, album) => sum + album.photoCount, 0);
+
+      photoTotal.textContent = total.toLocaleString("en-US");
+      tagList.innerHTML = [
+        `<span class="chip active">All</span>`,
+        ...tags.slice(0, 4).map((tag) => `<span class="chip">${escapeHTML(tag.name)}</span>`),
+      ].join("");
+      albumGrid.innerHTML = albums.length
+        ? albums.map(albumCard).join("")
+        : `<p class="load-state">No albums indexed yet.</p>`;
+    } catch (error) {
+      console.error(error);
+      albumGrid.innerHTML = `<p class="load-state">Failed to load albums.</p>`;
+    }
+  }
+
+  renderHome();
+</script>
 
 <style>
   .home-page {
@@ -120,6 +192,209 @@ const totalPhotos = albums.reduce((sum, album) => sum + album.photoCount, 0);
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 20px;
+  }
+
+  .load-state {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: var(--theme-muted);
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  :global(.chip) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 0 17px;
+    border: 1px solid var(--theme-border);
+    border-radius: var(--radius-pill);
+    background: var(--theme-surface);
+    color: var(--theme-muted);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  :global(.chip.active) {
+    border-color: var(--theme-current-accent);
+    background: var(--theme-current-accent-soft);
+    color: var(--theme-text);
+  }
+
+  .album-grid :global(.album-card) {
+    display: block;
+    padding: 10px 10px 18px;
+    border: 1px solid var(--theme-border);
+    border-radius: var(--radius-card);
+    background: var(--theme-surface);
+    box-shadow: var(--shadow-card);
+  }
+
+  .album-grid :global(.album-card:focus-visible) {
+    outline: 2px solid var(--theme-current-accent);
+    outline-offset: 4px;
+  }
+
+  .album-grid :global(.album-image) {
+    aspect-ratio: 1;
+  }
+
+  .album-grid :global(.image),
+  .album-grid :global(.placeholder) {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 12px;
+  }
+
+  .album-grid :global(.image) {
+    object-fit: cover;
+  }
+
+  .album-grid :global(.placeholder) {
+    position: relative;
+    background: var(--ph-bg);
+  }
+
+  .album-grid :global(.album-meta) {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 27px 4px 0;
+  }
+
+  .album-grid :global(.album-meta h2) {
+    margin: 0;
+    color: var(--theme-text);
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  .album-grid :global(.album-meta p) {
+    margin: 8px 0 0;
+    color: var(--theme-muted);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .album-grid :global(.dot) {
+    flex: 0 0 auto;
+    margin-top: 4px;
+  }
+
+  :global(.peach) {
+    --ph-bg: #f9cdb9;
+    --ph-circle: #fde6dc;
+    --ph-corner: #f7a99e;
+    --ph-square: #fff5ee;
+    --ph-line: rgb(17 17 17 / 62%);
+  }
+
+  :global(.linen) {
+    --ph-bg: #e8ddcf;
+    --ph-circle: #f6efe6;
+    --ph-corner: #c9beb2;
+    --ph-square: #faf5ed;
+    --ph-line: rgb(17 17 17 / 58%);
+  }
+
+  :global(.mint) {
+    --ph-bg: #c6eadc;
+    --ph-circle: #e9f6e6;
+    --ph-corner: #a9cdbf;
+    --ph-square: #e1f5ee;
+    --ph-line: rgb(17 17 17 / 32%);
+  }
+
+  :global(.sky) {
+    --ph-bg: #c7e1f2;
+    --ph-circle: #e6f3fb;
+    --ph-corner: #d4b9c8;
+    --ph-square: #e4f3f8;
+    --ph-line: rgb(17 17 17 / 62%);
+  }
+
+  :global(.lilac) {
+    --ph-bg: #d9cff1;
+    --ph-circle: #eee8fa;
+    --ph-corner: #dcb0c5;
+    --ph-square: #eee8fb;
+    --ph-line: rgb(17 17 17 / 52%);
+  }
+
+  :global(.lemon) {
+    --ph-bg: #f7e9a1;
+    --ph-circle: #fff8c8;
+    --ph-corner: #f5bf86;
+    --ph-square: #fff7d7;
+    --ph-line: rgb(17 17 17 / 22%);
+  }
+
+  :global(.circle-large),
+  :global(.circle-corner),
+  :global(.accent-mark),
+  :global(.soft-square),
+  :global(.stripe) {
+    position: absolute;
+    display: block;
+  }
+
+  :global(.circle-large) {
+    left: -24%;
+    bottom: -7%;
+    width: 78%;
+    aspect-ratio: 1;
+    border-radius: var(--radius-pill);
+    background: var(--ph-circle);
+    opacity: 0.86;
+  }
+
+  :global(.circle-corner) {
+    right: -18%;
+    top: -10%;
+    width: 46%;
+    aspect-ratio: 1;
+    border-radius: var(--radius-pill);
+    background: var(--ph-corner);
+    opacity: 0.86;
+  }
+
+  :global(.accent-mark) {
+    left: 13%;
+    top: 14%;
+    width: 20%;
+    max-width: 42px;
+    aspect-ratio: 1;
+    border-radius: var(--radius-pill);
+    background: var(--theme-current-accent);
+  }
+
+  :global(.soft-square) {
+    left: 14%;
+    top: 11%;
+    width: 32%;
+    aspect-ratio: 1;
+    border-radius: 20px;
+    background: var(--ph-square);
+    opacity: 0;
+  }
+
+  :global(.stripe) {
+    left: 10%;
+    bottom: 14%;
+    width: 36%;
+    height: 8%;
+    border-radius: var(--radius-pill);
+    background: var(--ph-line);
+  }
+
+  :global(.stripe-two) {
+    display: none;
   }
 
   @media (max-width: 1120px) {

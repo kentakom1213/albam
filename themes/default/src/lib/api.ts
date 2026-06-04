@@ -99,19 +99,23 @@ type ApiErrorResponse = {
   };
 };
 
-export const apiBaseUrl =
+const apiBaseUrl =
   import.meta.env.ALBAM_API_BASE_URL ??
   import.meta.env.PUBLIC_ALBAM_API_BASE_URL ??
-  "http://localhost:8080/api";
-
-const strictApi = import.meta.env.ALBAM_API_STRICT === "1";
-const apiBase = new URL(apiBaseUrl.endsWith("/") ? apiBaseUrl : `${apiBaseUrl}/`);
-const apiOrigin = apiBase.origin;
+  "/api";
 
 const tones: NonNullable<Album["tone"]>[] = ["peach", "linen", "mint", "sky", "lilac", "lemon"];
 
+function runtimeOrigin() {
+  return window.location.origin;
+}
+
+function apiBase() {
+  return new URL(apiBaseUrl.endsWith("/") ? apiBaseUrl : `${apiBaseUrl}/`, runtimeOrigin());
+}
+
 async function request<T>(path: string, params?: Record<string, string | number | boolean>) {
-  const url = new URL(path.replace(/^\//, ""), apiBase);
+  const url = new URL(path.replace(/^\//, ""), apiBase());
 
   for (const [key, value] of Object.entries(params ?? {})) {
     url.searchParams.set(key, String(value));
@@ -142,7 +146,11 @@ function resolveAssetUrl(path: string | null | undefined) {
     return undefined;
   }
 
-  return new URL(path, apiOrigin).toString();
+  if (path.startsWith("/")) {
+    return path;
+  }
+
+  return new URL(path, runtimeOrigin()).toString();
 }
 
 function formatDate(value: string | null | undefined, fallback = "-") {
@@ -191,14 +199,6 @@ function albumKind(album: ApiAlbum) {
   return primaryTag ? `${primaryTag.toUpperCase()} ALBUM` : "PHOTO ALBUM";
 }
 
-function toMockAlbum(album: (typeof mockAlbums)[number]): Album {
-  return { ...album };
-}
-
-function toMockPhoto(photo: (typeof mockPhotos)[number]): Photo {
-  return { ...photo };
-}
-
 export function toAlbum(album: ApiAlbum, index = 0): Album {
   return {
     id: album.id,
@@ -228,63 +228,24 @@ export function toPhoto(photo: ApiPhoto, index = 0): Photo {
 }
 
 export async function getAlbums(): Promise<Album[]> {
-  try {
-    const body = await request<AlbumsResponse>("albums", { limit: 50, offset: 0 });
-    return body.albums.map(toAlbum);
-  } catch (error) {
-    if (strictApi) {
-      throw error;
-    }
-
-    return mockAlbums.map(toMockAlbum);
-  }
+  const body = await request<AlbumsResponse>("albums", { limit: 50, offset: 0 });
+  return body.albums.map(toAlbum);
 }
 
 export async function getAlbum(albumId: string): Promise<Album> {
-  try {
-    const body = await request<AlbumResponse>(`albums/${albumId}`);
-    return toAlbum(body.album);
-  } catch (error) {
-    if (strictApi) {
-      throw error;
-    }
-
-    const album = mockAlbums.find((mockAlbum) => mockAlbum.id === albumId);
-    if (!album) {
-      throw error;
-    }
-
-    return toMockAlbum(album);
-  }
+  const body = await request<AlbumResponse>(`albums/${albumId}`);
+  return toAlbum(body.album);
 }
 
 export async function getAlbumPhotos(albumId: string): Promise<Photo[]> {
-  try {
-    const body = await request<PhotosResponse>(`albums/${albumId}/photos`, {
-      limit: 100,
-      offset: 0,
-    });
-    return body.photos.map(toPhoto);
-  } catch (error) {
-    if (strictApi) {
-      throw error;
-    }
-
-    return mockPhotos.filter((photo) => photo.albumId === albumId).map(toMockPhoto);
-  }
+  const body = await request<PhotosResponse>(`albums/${albumId}/photos`, {
+    limit: 100,
+    offset: 0,
+  });
+  return body.photos.map(toPhoto);
 }
 
 export async function getTags() {
-  try {
-    const body = await request<TagsResponse>("tags");
-    return body.tags;
-  } catch (error) {
-    if (strictApi) {
-      throw error;
-    }
-
-    const tagNames = [...new Set(mockAlbums.flatMap((album) => album.tags))];
-    return tagNames.map((name) => ({ id: name, name }));
-  }
+  const body = await request<TagsResponse>("tags");
+  return body.tags;
 }
-import { albums as mockAlbums, photos as mockPhotos } from "../data/mock";

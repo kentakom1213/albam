@@ -1,0 +1,707 @@
+---
+import Header from "../../components/Header.astro";
+import Layout from "../../components/Layout.astro";
+---
+
+<Layout title="albam | Album">
+  <Header backHref="/" />
+
+  <main class="page-shell detail-page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/">Albums</a>
+      <span>/</span>
+      <span id="breadcrumb-kind">Album</span>
+      <strong id="breadcrumb-title">Loading</strong>
+    </nav>
+
+    <section class="hero-card panel" aria-labelledby="album-title">
+      <div class="cover-collage">
+        <div class="cover-main" id="cover-main"></div>
+        <div class="cover-side">
+          <div id="cover-side-one"></div>
+          <div id="cover-side-two"></div>
+        </div>
+      </div>
+
+      <div class="hero-content">
+        <p class="eyebrow" id="album-kind">PHOTO ALBUM</p>
+        <h1 id="album-title" class="page-title">Loading</h1>
+        <p class="lead" id="album-description"></p>
+        <div class="meta-chips" id="meta-chips" aria-label="Album metadata"></div>
+        <div class="actions">
+          <button class="button primary" type="button">Share</button>
+          <button class="button" type="button">Download</button>
+          <button class="button" type="button">Edit album</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="content-grid">
+      <section class="photos-section" aria-labelledby="photos-title">
+        <div class="photos-toolbar">
+          <h2 id="photos-title">Photos</h2>
+          <div class="toolbar-chips" aria-label="Photo filters">
+            <span class="chip active small">All</span>
+            <span class="chip small">Favorites</span>
+            <span class="chip small">Newest</span>
+          </div>
+        </div>
+
+        <div class="photo-grid" id="photo-grid">
+          <p class="load-state">Loading photos...</p>
+        </div>
+      </section>
+
+      <aside class="info-panel panel" aria-labelledby="info-title">
+        <h2 id="info-title">Album info</h2>
+        <dl>
+          <div>
+            <dt>Photos</dt>
+            <dd id="info-photos">-</dd>
+          </div>
+          <div>
+            <dt>Size</dt>
+            <dd id="info-size">-</dd>
+          </div>
+          <div>
+            <dt>Created</dt>
+            <dd id="info-created">-</dd>
+          </div>
+          <div>
+            <dt>Updated</dt>
+            <dd id="info-updated">-</dd>
+          </div>
+        </dl>
+        <h3>Tags</h3>
+        <div class="tag-list" id="tag-list"></div>
+        <p class="info-note">
+          写真をクリックするとライトボックス，複数選択すると一括操作の想定です。
+        </p>
+      </aside>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { formatCompactDate, formatCompactMonth, getAlbum, getAlbumPhotos } from "../../lib/api";
+  import type { Album, Photo } from "../../lib/api";
+
+  const tones = ["peach", "linen", "mint", "sky", "lilac", "lemon"] as const;
+
+  function escapeHTML(value: string) {
+    return value.replace(/[&<>"']/g, (char) => {
+      const entities: Record<string, string> = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      };
+      return entities[char];
+    });
+  }
+
+  function currentAlbumId() {
+    const parts = window.location.pathname.split("/").filter(Boolean);
+    return parts[0] === "albums" ? decodeURIComponent(parts[1] ?? "") : "";
+  }
+
+  function imageHTML(src: string | undefined, tone: Album["tone"], alt: string, collage = false) {
+    if (src) {
+      return `<img class="image" src="${escapeHTML(src)}" alt="${escapeHTML(alt)}" loading="lazy" />`;
+    }
+
+    return `
+      <div class="placeholder ${tone ?? "peach"} ${collage ? "collage" : ""}" role="img" aria-label="${escapeHTML(alt)}">
+        <span class="circle-large"></span>
+        <span class="circle-corner"></span>
+        <span class="accent-mark"></span>
+        <span class="soft-square"></span>
+        <span class="stripe stripe-one"></span>
+        <span class="stripe stripe-two"></span>
+      </div>
+    `;
+  }
+
+  function photoCard(photo: Photo, index: number) {
+    const tone = photo.tone ?? tones[index % tones.length];
+    const selected = index === 1;
+
+    return `
+      <article class="photo-card ${selected ? "selected" : ""}">
+        <div class="photo-image">
+          ${imageHTML(photo.src, tone, photo.title)}
+        </div>
+        <div class="photo-title">
+          <span>${escapeHTML(photo.title)}</span>
+          ${selected ? `<span class="dot" aria-hidden="true"></span>` : ""}
+        </div>
+      </article>
+    `;
+  }
+
+  function setText(selector: string, value: string) {
+    const element = document.querySelector<HTMLElement>(selector);
+    if (element) {
+      element.textContent = value;
+    }
+  }
+
+  async function renderAlbum() {
+    const albumId = currentAlbumId();
+    const photoGrid = document.querySelector<HTMLElement>("#photo-grid");
+
+    if (!albumId || !photoGrid) {
+      if (photoGrid) {
+        photoGrid.innerHTML = `<p class="load-state">Album not found.</p>`;
+      }
+      return;
+    }
+
+    try {
+      const [album, photos] = await Promise.all([getAlbum(albumId), getAlbumPhotos(albumId)]);
+      const visibleDate = formatCompactDate(album.createdAt);
+      const shortDate = formatCompactMonth(album.createdAt);
+      const coverPhotos = photos.slice(0, 3);
+
+      document.title = `albam | ${album.title}`;
+      setText("#breadcrumb-kind", album.kind.replace(" ALBUM", ""));
+      setText("#breadcrumb-title", album.title);
+      setText("#album-kind", album.kind);
+      setText("#album-title", album.title);
+      setText("#album-description", album.description);
+      setText("#info-photos", album.photoCount.toLocaleString("en-US"));
+      setText("#info-size", album.size);
+      setText("#info-created", album.createdAt);
+      setText("#info-updated", album.updatedAt);
+
+      const coverMain = document.querySelector<HTMLElement>("#cover-main");
+      const coverSideOne = document.querySelector<HTMLElement>("#cover-side-one");
+      const coverSideTwo = document.querySelector<HTMLElement>("#cover-side-two");
+      const metaChips = document.querySelector<HTMLElement>("#meta-chips");
+      const tagList = document.querySelector<HTMLElement>("#tag-list");
+
+      if (coverMain) {
+        coverMain.innerHTML = imageHTML(album.coverSrc ?? coverPhotos[0]?.previewSrc ?? coverPhotos[0]?.src, album.tone, `${album.title} cover`, true);
+      }
+      if (coverSideOne) {
+        coverSideOne.innerHTML = imageHTML(coverPhotos[1]?.src, "peach", "");
+      }
+      if (coverSideTwo) {
+        coverSideTwo.innerHTML = imageHTML(coverPhotos[2]?.src, "mint", "");
+      }
+      if (metaChips) {
+        metaChips.style.setProperty("--short-date", `"${shortDate}"`);
+        metaChips.innerHTML = `
+          <span class="chip active">${album.photoCount.toLocaleString("en-US")} photos</span>
+          <span class="chip">${escapeHTML(visibleDate)}</span>
+          <span class="chip">${escapeHTML(album.visibility)}</span>
+        `;
+      }
+      if (tagList) {
+        tagList.innerHTML = album.tags.length
+          ? album.tags.map((tag, index) => `<span class="chip small ${index === 0 ? "active" : ""}">${escapeHTML(tag)}</span>`).join("")
+          : `<span class="chip small">No tags</span>`;
+      }
+
+      photoGrid.innerHTML = photos.length
+        ? photos.map(photoCard).join("")
+        : `<p class="load-state">No photos indexed yet.</p>`;
+    } catch (error) {
+      console.error(error);
+      photoGrid.innerHTML = `<p class="load-state">Failed to load album.</p>`;
+    }
+  }
+
+  renderAlbum();
+</script>
+
+<style>
+  .detail-page {
+    padding: 46px 0 110px;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 18px;
+    color: var(--theme-muted);
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .breadcrumb strong {
+    color: var(--theme-text);
+  }
+
+  .hero-card {
+    display: grid;
+    grid-template-columns: minmax(460px, 640px) 1fr;
+    gap: 46px;
+    align-items: center;
+    min-height: 336px;
+    padding: 20px;
+  }
+
+  .cover-collage {
+    display: grid;
+    grid-template-columns: 1fr 180px;
+    gap: 16px;
+    height: 292px;
+  }
+
+  .cover-main,
+  .cover-side > * {
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .cover-side {
+    display: grid;
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    min-height: 0;
+  }
+
+  .hero-content {
+    padding-right: 32px;
+  }
+
+  .hero-content .page-title {
+    margin: 18px 0 13px;
+    font-size: 64px;
+  }
+
+  .hero-content .lead {
+    max-width: 580px;
+  }
+
+  .meta-chips,
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .meta-chips {
+    margin-top: 6px;
+  }
+
+  .actions {
+    margin-top: 20px;
+  }
+
+  .content-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 30px;
+    margin-top: 50px;
+  }
+
+  .photos-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 66px;
+    margin-bottom: 32px;
+    padding: 0 23px;
+    border: 1px solid var(--theme-border);
+    border-radius: 20px;
+    background: var(--theme-surface);
+  }
+
+  .photos-toolbar h2,
+  .info-panel h2 {
+    margin: 0;
+    color: var(--theme-text);
+    font-size: 27px;
+    font-weight: 900;
+  }
+
+  .toolbar-chips,
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px 18px;
+  }
+
+  .info-panel {
+    align-self: start;
+    padding: 24px;
+    box-shadow: none;
+  }
+
+  dl {
+    display: grid;
+    gap: 30px;
+    margin: 25px 0 44px;
+  }
+
+  dl div {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 20px;
+  }
+
+  dt {
+    color: var(--theme-muted);
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  dd {
+    margin: 0;
+    color: var(--theme-text);
+    font-size: 15px;
+    font-weight: 800;
+  }
+
+  h3 {
+    margin: 0 0 14px;
+    color: var(--theme-text);
+    font-size: 18px;
+    font-weight: 900;
+  }
+
+  .tag-list {
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--theme-border);
+  }
+
+  .info-note {
+    margin: 22px 0 0;
+    color: var(--theme-muted);
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.7;
+  }
+
+  .load-state {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: var(--theme-muted);
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  :global(.button) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 24px;
+    border: 1px solid var(--theme-border);
+    border-radius: var(--radius-pill);
+    background: var(--theme-surface);
+    color: var(--theme-text);
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  :global(.button.primary) {
+    border-color: var(--theme-text);
+    background: var(--theme-text);
+    color: var(--theme-surface);
+  }
+
+  :global(.chip) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 0 17px;
+    border: 1px solid var(--theme-border);
+    border-radius: var(--radius-pill);
+    background: var(--theme-surface);
+    color: var(--theme-muted);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  :global(.chip.active) {
+    border-color: var(--theme-current-accent);
+    background: var(--theme-current-accent-soft);
+    color: var(--theme-text);
+  }
+
+  :global(.chip.small) {
+    min-height: 30px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+
+  :global(.image),
+  :global(.placeholder) {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 12px;
+  }
+
+  :global(.image) {
+    object-fit: cover;
+  }
+
+  :global(.placeholder) {
+    position: relative;
+    background: var(--ph-bg);
+  }
+
+  :global(.photo-card) {
+    padding: 8px 8px 12px;
+    border: 1px solid var(--theme-border);
+    border-radius: var(--radius-card);
+    background: var(--theme-surface);
+    overflow: hidden;
+  }
+
+  :global(.photo-card.selected) {
+    border-color: var(--theme-current-accent);
+    box-shadow: inset 0 0 0 1px var(--theme-current-accent);
+  }
+
+  :global(.photo-image) {
+    aspect-ratio: 1;
+  }
+
+  :global(.photo-title) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 39px;
+    padding: 10px 2px 0;
+    color: var(--theme-muted);
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  :global(.photo-title span:first-child) {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  :global(.peach) {
+    --ph-bg: #f9cdb9;
+    --ph-circle: #fde6dc;
+    --ph-corner: #f7a99e;
+    --ph-square: #fff5ee;
+    --ph-line: rgb(17 17 17 / 62%);
+  }
+
+  :global(.linen) {
+    --ph-bg: #e8ddcf;
+    --ph-circle: #f6efe6;
+    --ph-corner: #c9beb2;
+    --ph-square: #faf5ed;
+    --ph-line: rgb(17 17 17 / 58%);
+  }
+
+  :global(.mint) {
+    --ph-bg: #c6eadc;
+    --ph-circle: #e9f6e6;
+    --ph-corner: #a9cdbf;
+    --ph-square: #e1f5ee;
+    --ph-line: rgb(17 17 17 / 32%);
+  }
+
+  :global(.sky) {
+    --ph-bg: #c7e1f2;
+    --ph-circle: #e6f3fb;
+    --ph-corner: #d4b9c8;
+    --ph-square: #e4f3f8;
+    --ph-line: rgb(17 17 17 / 62%);
+  }
+
+  :global(.lilac) {
+    --ph-bg: #d9cff1;
+    --ph-circle: #eee8fa;
+    --ph-corner: #dcb0c5;
+    --ph-square: #eee8fb;
+    --ph-line: rgb(17 17 17 / 52%);
+  }
+
+  :global(.lemon) {
+    --ph-bg: #f7e9a1;
+    --ph-circle: #fff8c8;
+    --ph-corner: #f5bf86;
+    --ph-square: #fff7d7;
+    --ph-line: rgb(17 17 17 / 22%);
+  }
+
+  :global(.circle-large),
+  :global(.circle-corner),
+  :global(.accent-mark),
+  :global(.soft-square),
+  :global(.stripe) {
+    position: absolute;
+    display: block;
+  }
+
+  :global(.circle-large) {
+    left: -24%;
+    bottom: -7%;
+    width: 78%;
+    aspect-ratio: 1;
+    border-radius: var(--radius-pill);
+    background: var(--ph-circle);
+    opacity: 0.86;
+  }
+
+  :global(.circle-corner) {
+    right: -18%;
+    top: -10%;
+    width: 46%;
+    aspect-ratio: 1;
+    border-radius: var(--radius-pill);
+    background: var(--ph-corner);
+    opacity: 0.86;
+  }
+
+  :global(.accent-mark) {
+    left: 13%;
+    top: 14%;
+    width: 20%;
+    max-width: 42px;
+    aspect-ratio: 1;
+    border-radius: var(--radius-pill);
+    background: var(--theme-current-accent);
+  }
+
+  :global(.soft-square) {
+    left: 14%;
+    top: 11%;
+    width: 32%;
+    aspect-ratio: 1;
+    border-radius: 20px;
+    background: var(--ph-square);
+    opacity: 0;
+  }
+
+  :global(.stripe) {
+    left: 10%;
+    bottom: 14%;
+    width: 36%;
+    height: 8%;
+    border-radius: var(--radius-pill);
+    background: var(--ph-line);
+  }
+
+  :global(.stripe-two) {
+    display: none;
+  }
+
+  @media (max-width: 1120px) {
+    .hero-card {
+      grid-template-columns: 1fr;
+    }
+
+    .content-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .info-panel {
+      display: none;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .photo-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .detail-page {
+      padding: 29px 0 0;
+    }
+
+    .breadcrumb {
+      margin-bottom: 13px;
+      font-size: 15px;
+    }
+
+    .breadcrumb strong {
+      display: none;
+    }
+
+    .hero-card {
+      display: flex;
+      flex-direction: column;
+      gap: 31px;
+      min-height: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .cover-collage {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .cover-main {
+      aspect-ratio: 346 / 209;
+    }
+
+    .cover-side {
+      display: none;
+    }
+
+    .hero-content {
+      padding-right: 0;
+    }
+
+    .hero-content .page-title {
+      margin: 13px 0 9px;
+      font-size: 38px;
+    }
+
+    .actions {
+      display: none;
+    }
+
+    .content-grid {
+      margin-top: 36px;
+    }
+
+    .photos-toolbar {
+      margin-bottom: 18px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+    }
+
+    .photos-toolbar h2 {
+      font-size: 25px;
+    }
+
+    .toolbar-chips {
+      display: none;
+    }
+
+    .photo-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      padding-bottom: 24px;
+    }
+  }
+</style>
