@@ -1,5 +1,4 @@
 ---
-import Chip from "../components/Chip.astro";
 import Header from "../components/Header.astro";
 import Layout from "../components/Layout.astro";
 import { getThemeConfig } from "../lib/theme-config";
@@ -21,9 +20,6 @@ const theme = getThemeConfig();
         <h1 id="home-title" class="page-title">{theme.homeTitle}</h1>
         <p class="lead desktop-lead">{theme.homeDescription}</p>
         <p class="lead mobile-lead">{theme.homeDescription}</p>
-        <div class="chip-row" id="tag-list" aria-label="Album filters">
-          <Chip label="All" active />
-        </div>
       </div>
     </section>
 
@@ -34,12 +30,11 @@ const theme = getThemeConfig();
 </Layout>
 
 <script>
-  import { getAlbums, getTags } from "../lib/api";
+  import { getAlbums } from "../lib/api";
   import type { Album } from "../lib/api";
 
   const tones = ["peach", "linen", "mint", "sky", "lilac", "lemon"] as const;
   const albumGrid = document.querySelector<HTMLElement>("#album-grid");
-  const tagList = document.querySelector<HTMLElement>("#tag-list");
 
   function escapeHTML(value: string) {
     return value.replace(/[&<>"']/g, (char) => {
@@ -91,17 +86,13 @@ const theme = getThemeConfig();
   }
 
   async function renderHome() {
-    if (!albumGrid || !tagList) {
+    if (!albumGrid) {
       return;
     }
 
     try {
-      const [albums, tags] = await Promise.all([getAlbums(), getTags().catch(() => [])]);
+      const albums = await getAlbums();
 
-      tagList.innerHTML = [
-        `<span class="chip active">All</span>`,
-        ...tags.slice(0, 4).map((tag) => `<span class="chip">${escapeHTML(tag.name)}</span>`),
-      ].join("");
       albumGrid.innerHTML = albums.length
         ? albums.map(albumCard).join("")
         : `<p class="load-state">No albums indexed yet.</p>`;
@@ -156,14 +147,6 @@ const theme = getThemeConfig();
     display: none;
   }
 
-  .chip-row {
-    grid-column: 1 / -1;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 38px;
-  }
-
   .album-grid {
     display: grid;
     grid-template-columns: repeat(var(--album-grid-columns), minmax(0, 1fr));
@@ -176,28 +159,6 @@ const theme = getThemeConfig();
     color: var(--theme-muted);
     font-size: 16px;
     font-weight: 600;
-  }
-
-  :global(.chip) {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 34px;
-    padding: 0 17px;
-    border: 1px solid var(--theme-border);
-    border-radius: var(--radius-pill);
-    background: var(--theme-surface);
-    color: var(--theme-muted);
-    font-size: 14px;
-    font-weight: 500;
-    line-height: 1;
-    white-space: nowrap;
-  }
-
-  :global(.chip.active) {
-    border-color: var(--theme-current-accent);
-    background: var(--theme-current-accent-soft);
-    color: var(--theme-text);
   }
 
   .album-grid :global(.album-card) {
@@ -414,26 +375,6 @@ const theme = getThemeConfig();
     .mobile-eyebrow,
     .mobile-lead {
       display: block;
-    }
-
-    .chip-row {
-      flex-wrap: nowrap;
-      gap: 8px;
-      margin-top: 10px;
-      overflow: hidden;
-    }
-
-    .chip-row :global(.chip:nth-child(n + 4)) {
-      display: none;
-    }
-
-    .chip-row :global(.chip:nth-child(2)) {
-      font-size: 0;
-    }
-
-    .chip-row :global(.chip:nth-child(2))::before {
-      font-size: 14px;
-      content: "Fav";
     }
 
     .album-grid {

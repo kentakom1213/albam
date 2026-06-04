@@ -66,7 +66,6 @@ func photoFromRow(row storage.AssetRow, albumID string) Photo {
 		Height:      nil,
 		AspectRatio: nil,
 		Favorite:    false,
-		Tags:        []Tag{},
 		Links: PhotoLinks{
 			Self:     "/api/photos/" + photoID,
 			Thumb:    "/media/photos/" + photoID + "/thumb",

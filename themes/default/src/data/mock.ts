@@ -8,7 +8,6 @@ export type Album = {
   updatedAt: string;
   size: string;
   visibility: "public" | "private";
-  tags: string[];
   tone?: "peach" | "linen" | "mint" | "sky" | "lilac" | "lemon";
 };
 
@@ -31,7 +30,6 @@ export const albums: Album[] = [
     updatedAt: "May 04, 2026",
     size: "620 MB",
     visibility: "public",
-    tags: ["daily", "walk"],
     tone: "peach",
   },
   {
@@ -44,7 +42,6 @@ export const albums: Album[] = [
     updatedAt: "May 12, 2026",
     size: "320 MB",
     visibility: "private",
-    tags: ["daily", "cafe"],
     tone: "linen",
   },
   {
@@ -57,7 +54,6 @@ export const albums: Album[] = [
     updatedAt: "May 01, 2026",
     size: "860 MB",
     visibility: "public",
-    tags: ["flower", "walk"],
     tone: "mint",
   },
   {
@@ -71,7 +67,6 @@ export const albums: Album[] = [
     updatedAt: "May 23, 2026",
     size: "1.2 GB",
     visibility: "public",
-    tags: ["travel", "sea", "cafe", "friends", "film"],
     tone: "sky",
   },
   {
@@ -84,7 +79,6 @@ export const albums: Album[] = [
     updatedAt: "Apr 25, 2026",
     size: "410 MB",
     visibility: "private",
-    tags: ["room", "daily"],
     tone: "lilac",
   },
   {
@@ -97,7 +91,6 @@ export const albums: Album[] = [
     updatedAt: "Apr 20, 2026",
     size: "700 MB",
     visibility: "public",
-    tags: ["sky", "walk"],
     tone: "lemon",
   },
   {
@@ -110,7 +103,6 @@ export const albums: Album[] = [
     updatedAt: "Apr 11, 2026",
     size: "390 MB",
     visibility: "private",
-    tags: ["daily"],
     tone: "linen",
   },
   {
@@ -123,7 +115,6 @@ export const albums: Album[] = [
     updatedAt: "Apr 03, 2026",
     size: "520 MB",
     visibility: "public",
-    tags: ["daily", "park"],
     tone: "mint",
   },
   {
@@ -136,7 +127,6 @@ export const albums: Album[] = [
     updatedAt: "Apr 01, 2026",
     size: "920 MB",
     visibility: "private",
-    tags: ["home", "daily"],
     tone: "peach",
   },
   {
@@ -149,7 +139,6 @@ export const albums: Album[] = [
     updatedAt: "Mar 21, 2026",
     size: "280 MB",
     visibility: "public",
-    tags: ["film", "daily"],
     tone: "sky",
   },
 ];

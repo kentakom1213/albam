@@ -113,7 +113,6 @@ func albumFromRow(row storage.AlbumRow) Album {
 		PhotoCount:   row.PhotoCount,
 		CoverPhotoID: coverPhotoID,
 		Visibility:   "private",
-		Tags:         []Tag{},
 		Links: AlbumLinks{
 			Self:   "/api/albums/" + row.Slug,
 			Photos: "/api/albums/" + row.Slug + "/photos",

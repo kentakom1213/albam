@@ -1,12 +1,5 @@
 package api
 
-type Tag struct {
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	PhotoCount *int   `json:"photo_count,omitempty"`
-	AlbumCount *int   `json:"album_count,omitempty"`
-}
-
 type Album struct {
 	ID           string     `json:"id"`
 	Title        string     `json:"title"`
@@ -17,7 +10,6 @@ type Album struct {
 	PhotoCount   int        `json:"photo_count"`
 	CoverPhotoID *string    `json:"cover_photo_id"`
 	Visibility   string     `json:"visibility"`
-	Tags         []Tag      `json:"tags"`
 	Links        AlbumLinks `json:"links"`
 }
 
@@ -38,7 +30,6 @@ type Photo struct {
 	Height      *int       `json:"height"`
 	AspectRatio *float64   `json:"aspect_ratio"`
 	Favorite    bool       `json:"favorite"`
-	Tags        []Tag      `json:"tags"`
 	Links       PhotoLinks `json:"links"`
 }
 
@@ -68,10 +59,6 @@ type AlbumResponse struct {
 type PhotosResponse struct {
 	Photos     []Photo    `json:"photos"`
 	Pagination Pagination `json:"pagination"`
-}
-
-type TagsResponse struct {
-	Tags []Tag `json:"tags"`
 }
 
 type ErrorResponse struct {

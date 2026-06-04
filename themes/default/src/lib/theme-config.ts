@@ -17,7 +17,6 @@ export type ThemeConfig = {
   };
   nav: {
     albums: string;
-    tags: string;
     settings: string;
   };
 };
@@ -33,7 +32,6 @@ type RawThemeConfig = {
     photo_grid_columns?: number;
     nav?: {
       albums?: string;
-      tags?: string;
       settings?: string;
     };
   };
@@ -46,7 +44,7 @@ const defaults: ThemeConfig = {
   brand: "albam",
   homeTitle: "Your Albums",
   homeEyebrow: "SELF-HOSTED PHOTO ALBUM",
-  homeDescription: "写真をディレクトリやタグごとに，シンプルで可愛いグリッドとして眺められるアルバムです。",
+  homeDescription: "写真をディレクトリごとに，シンプルで可愛いグリッドとして眺められるアルバムです。",
   layout: {
     albumGridColumns: 5,
     albumGridColumnsTablet: 3,
@@ -57,7 +55,6 @@ const defaults: ThemeConfig = {
   },
   nav: {
     albums: "Albums",
-    tags: "Tags",
     settings: "Settings",
   },
 };
@@ -84,7 +81,6 @@ export function getThemeConfig(): ThemeConfig {
     },
     nav: {
       albums: stringValue(params.nav?.albums, defaults.nav.albums),
-      tags: stringValue(params.nav?.tags, defaults.nav.tags),
       settings: stringValue(params.nav?.settings, defaults.nav.settings),
     },
   };

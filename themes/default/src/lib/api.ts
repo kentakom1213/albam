@@ -1,10 +1,3 @@
-export type Tag = {
-  id: string;
-  name: string;
-  photo_count?: number;
-  album_count?: number;
-};
-
 export type ApiAlbum = {
   id: string;
   title: string;
@@ -15,7 +8,6 @@ export type ApiAlbum = {
   photo_count: number;
   cover_photo_id: string | null;
   visibility: "public" | "private";
-  tags: Tag[];
   links: {
     self: string;
     photos: string;
@@ -34,7 +26,6 @@ export type ApiPhoto = {
   height: number | null;
   aspect_ratio: number | null;
   favorite: boolean;
-  tags: Tag[];
   links: {
     self: string;
     thumb: string;
@@ -60,7 +51,6 @@ export type Album = {
   updatedAt: string;
   size: string;
   visibility: "public" | "private";
-  tags: string[];
   coverSrc?: string;
   tone?: "peach" | "linen" | "mint" | "sky" | "lilac" | "lemon";
 };
@@ -87,10 +77,6 @@ type AlbumResponse = {
 type PhotosResponse = {
   photos: ApiPhoto[];
   pagination: Pagination;
-};
-
-type TagsResponse = {
-  tags: Tag[];
 };
 
 type ApiErrorResponse = {
@@ -195,23 +181,17 @@ export function formatCompactMonth(value: string | null | undefined) {
   return compact === "-" ? compact : compact.split(".").slice(0, 2).join(".");
 }
 
-function albumKind(album: ApiAlbum) {
-  const primaryTag = album.tags[0]?.name;
-  return primaryTag ? `${primaryTag.toUpperCase()} ALBUM` : "PHOTO ALBUM";
-}
-
 export function toAlbum(album: ApiAlbum, index = 0): Album {
   return {
     id: album.id,
     title: album.title,
-    kind: albumKind(album),
+    kind: "PHOTO ALBUM",
     description: album.description,
     photoCount: album.photo_count,
     createdAt: formatDate(album.created_at),
     updatedAt: formatDate(album.updated_at),
     size: "-",
     visibility: album.visibility,
-    tags: album.tags.map((tag) => tag.name),
     coverSrc: resolveAssetUrl(album.links.cover),
     tone: tones[index % tones.length],
   };
@@ -245,9 +225,4 @@ export async function getAlbumPhotos(albumId: string): Promise<Photo[]> {
     offset: 0,
   });
   return body.photos.map(toPhoto);
-}
-
-export async function getTags() {
-  const body = await request<TagsResponse>("tags");
-  return body.tags;
 }

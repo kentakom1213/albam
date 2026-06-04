@@ -13,12 +13,8 @@ const theme = getThemeConfig();
   <div class="header-actions">
     <nav class="site-nav" aria-label="Primary navigation">
       <a class="active" href="/">{theme.nav.albums}</a>
-      <a href="/">{theme.nav.tags}</a>
       <a href="/">{theme.nav.settings}</a>
     </nav>
-    <button class="search-button" type="button" aria-label="Search">
-      <span class="search-ring" aria-hidden="true"></span>
-    </button>
   </div>
 </header>
 
@@ -70,42 +66,6 @@ const theme = getThemeConfig();
 
   .site-nav .active {
     color: var(--theme-text);
-  }
-
-  .search-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    height: 38px;
-    border: 1px solid var(--theme-border);
-    border-radius: var(--radius-pill);
-    background: var(--theme-surface);
-    color: var(--theme-text);
-  }
-
-  .search-button {
-    width: 38px;
-  }
-
-  .search-ring {
-    position: relative;
-    width: 13px;
-    height: 13px;
-    border: 3px solid var(--theme-text);
-    border-radius: var(--radius-pill);
-  }
-
-  .search-ring::after {
-    position: absolute;
-    right: -6px;
-    bottom: -5px;
-    width: 7px;
-    height: 3px;
-    border-radius: var(--radius-pill);
-    background: var(--theme-text);
-    content: "";
-    transform: rotate(42deg);
-    transform-origin: left center;
   }
 
   @media (max-width: 640px) {
