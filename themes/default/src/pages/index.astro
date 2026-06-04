@@ -1,5 +1,4 @@
 ---
-import Header from "../components/Header.astro";
 import Layout from "../components/Layout.astro";
 import { getThemeConfig } from "../lib/theme-config";
 
@@ -7,8 +6,6 @@ const theme = getThemeConfig();
 ---
 
 <Layout title={`${theme.siteTitle} | ${theme.homeTitle}`}>
-  <Header />
-
   <main
     class="page-shell home-page"
     style={`--album-grid-columns: ${theme.layout.albumGridColumns}; --album-grid-columns-tablet: ${theme.layout.albumGridColumnsTablet}; --album-grid-columns-mobile: ${theme.layout.albumGridColumnsMobile};`}

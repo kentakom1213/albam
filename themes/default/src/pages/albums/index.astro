@@ -1,5 +1,4 @@
 ---
-import Header from "../../components/Header.astro";
 import Layout from "../../components/Layout.astro";
 import { getThemeConfig } from "../../lib/theme-config";
 
@@ -7,8 +6,6 @@ const theme = getThemeConfig();
 ---
 
 <Layout title={`${theme.siteTitle} | Album`}>
-  <Header />
-
   <main
     class="page-shell detail-page"
     data-site-title={theme.siteTitle}
