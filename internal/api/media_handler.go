@@ -125,7 +125,7 @@ func (h *MediaHandler) serveVariant(w http.ResponseWriter, r *http.Request, phot
 	}
 
 	w.Header().Set("Content-Type", "image/jpeg")
-	w.Header().Set("Cache-Control", "public, max-age-31536000, immutable")
+	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 
 	http.ServeFile(w, r, cachePath)
 	return nil

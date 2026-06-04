@@ -47,6 +47,7 @@ SELECT
 FROM albums
 LEFT JOIN assets ON assets.album_id = albums.id
 GROUP BY albums.id
+HAVING COUNT(assets.id) > 0
 ORDER BY albums.path
 LIMIT ? OFFSET ?
 `, limit, offset)
