@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -13,15 +12,8 @@ import (
 	"github.com/kentakom1213/albam/internal/imageproc"
 )
 
-var ErrPhotoNotFound = errors.New("photo not found")
-
-type PhotoForMedia struct {
-	ID   string
-	Path string
-}
-
 type PhotoMediaStore interface {
-	GetPhotoForMediaByID(ctx context.Context, photoID string) (string, error)
+	GetPhotoForMediaByID(ctx context.Context, slug string) (string, error)
 }
 
 type MediaHandler struct {
@@ -48,20 +40,20 @@ func NewMediaHandler(store PhotoMediaStore, mediaRoot, cacheRoot string) *MediaH
 func (h *MediaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodHead {
 		w.Header().Set("Allow", "GET, HEAD")
-		writeAPIError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed")
+		writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed")
 		return
 	}
 
 	photoID, kind, ok := parseMediaPath(r.URL.Path)
 	if !ok {
-		writeAPIError(w, http.StatusNotFound, "not_found", "not found")
+		writeError(w, http.StatusNotFound, "not_found", "not found")
 		return
 	}
 
 	switch kind {
 	case VariantThumb, VariantPreview:
 	default:
-		writeAPIError(w, http.StatusNotFound, "media_variant_not_found", "media variant not found")
+		writeError(w, http.StatusNotFound, "media_variant_not_found", "media variant not found")
 		return
 	}
 
@@ -74,7 +66,7 @@ func (h *MediaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			code = "photo_not_found"
 		}
 
-		writeAPIError(w, status, code, err.Error())
+		writeError(w, status, code, err.Error())
 		return
 	}
 }
@@ -152,16 +144,4 @@ func optionsForVariant(kind VariantKind) imageproc.Options {
 			Quality:   82,
 		}
 	}
-}
-
-func writeAPIError(w http.ResponseWriter, status int, code string, message string) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(status)
-
-	_ = json.NewEncoder(w).Encode(map[string]any{
-		"error": map[string]string{
-			"code":    code,
-			"message": message,
-		},
-	})
 }
