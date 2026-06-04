@@ -6,9 +6,9 @@ brand = "albam"
 accent = "coral"
 home_title = "My Albums"
 home_eyebrow = "SELF-HOSTED PHOTO ALBUM"
-home_description = "写真をディレクトリごとに眺められるアルバムです。"
-album_grid_columns = 5
-photo_grid_columns = 6
+home_description = "a simple folder-based album"
+album_grid_columns = 4
+photo_grid_columns = 5
 
 [params.nav]
 albums = "Albums"

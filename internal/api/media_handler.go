@@ -16,10 +16,13 @@ type PhotoMediaStore interface {
 	GetPhotoForMediaByID(ctx context.Context, slug string) (string, error)
 }
 
+var ErrOriginalDownloadDisabled = errors.New("original download is disabled")
+
 type MediaHandler struct {
-	Store     PhotoMediaStore
-	MediaRoot string
-	CacheRoot string
+	Store                 PhotoMediaStore
+	MediaRoot             string
+	CacheRoot             string
+	AllowOriginalDownload bool
 }
 
 type VariantKind string
@@ -30,11 +33,12 @@ const (
 	VariantOriginal VariantKind = "original"
 )
 
-func NewMediaHandler(store PhotoMediaStore, mediaRoot, cacheRoot string) *MediaHandler {
+func NewMediaHandler(store PhotoMediaStore, mediaRoot, cacheRoot string, allowOriginalDownload bool) *MediaHandler {
 	return &MediaHandler{
-		Store:     store,
-		MediaRoot: mediaRoot,
-		CacheRoot: cacheRoot,
+		Store:                 store,
+		MediaRoot:             mediaRoot,
+		CacheRoot:             cacheRoot,
+		AllowOriginalDownload: allowOriginalDownload,
 	}
 }
 
@@ -56,7 +60,11 @@ func (h *MediaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			status := http.StatusInternalServerError
 			code := "media_error"
 
-			if errors.Is(err, sql.ErrNoRows) {
+			switch {
+			case errors.Is(err, ErrOriginalDownloadDisabled):
+				status = http.StatusForbidden
+				code = "original_download_disabled"
+			case errors.Is(err, sql.ErrNoRows):
 				status = http.StatusNotFound
 				code = "photo_not_found"
 			}
@@ -151,6 +159,10 @@ func (h *MediaHandler) serveVariant(w http.ResponseWriter, r *http.Request, phot
 }
 
 func (h *MediaHandler) serveOriginal(w http.ResponseWriter, r *http.Request, photoID string) error {
+	if !h.AllowOriginalDownload {
+		return ErrOriginalDownloadDisabled
+	}
+
 	if h.Store == nil {
 		return fmt.Errorf("photo media store is nil")
 	}

@@ -11,31 +11,30 @@ const theme = getThemeConfig();
     data-site-title={theme.siteTitle}
     style={`--photo-grid-columns: ${theme.layout.photoGridColumns}; --photo-grid-columns-tablet: ${theme.layout.photoGridColumnsTablet}; --photo-grid-columns-mobile: ${theme.layout.photoGridColumnsMobile};`}
   >
-    <nav class="breadcrumb" id="album-breadcrumbs" aria-label="Breadcrumb">
-      <a href="/">Albums</a>
-      <span class="separator" aria-hidden="true">/</span>
-      <span aria-current="page">Loading</span>
-    </nav>
+    <div class="detail-topbar">
+      <nav class="breadcrumb" id="album-breadcrumbs" aria-label="Breadcrumb">
+        <a href="/">Albums</a>
+        <span class="separator" aria-hidden="true">/</span>
+        <span aria-current="page">Loading</span>
+      </nav>
+
+      <div class="toolbar-chips" aria-label="Photo filters">
+        <span class="chip active small">All</span>
+        <span class="chip small">Favorites</span>
+        <span class="chip small">Newest</span>
+        <button class="help-button" type="button" aria-label="Album info" aria-expanded="false">?</button>
+      </div>
+    </div>
 
     <section class="album-hero" aria-labelledby="album-title">
       <div class="hero-content">
         <h1 id="album-title" class="page-title">Loading</h1>
         <p class="lead" id="album-description"></p>
       </div>
-
-      <div class="actions">
-        <button class="button primary" type="button">Share</button>
-        <button class="help-button" type="button" aria-label="Help">?</button>
-      </div>
     </section>
 
     <div class="album-controls">
       <div class="meta-chips" id="meta-chips" aria-label="Album metadata"></div>
-      <div class="toolbar-chips" aria-label="Photo filters">
-        <span class="chip active small">All</span>
-        <span class="chip small">Favorites</span>
-        <span class="chip small">Newest</span>
-      </div>
     </div>
 
     <section class="photos-section" aria-label="Photos">
@@ -92,11 +91,33 @@ const theme = getThemeConfig();
     <div class="photo-modal" id="photo-modal" role="dialog" aria-modal="true" aria-label="Photo viewer" hidden>
       <button class="modal-backdrop" type="button" data-modal-close aria-label="Close photo viewer"></button>
       <figure class="modal-frame">
-        <button class="modal-close" type="button" data-modal-close aria-label="Close photo viewer">×</button>
+        <button class="modal-close" type="button" data-modal-close aria-label="Close photo viewer"></button>
         <img id="modal-image" alt="" />
         <figcaption id="modal-caption"></figcaption>
       </figure>
     </div>
+
+    <aside class="album-info-modal" id="album-info-modal" role="dialog" aria-label="Album info" hidden>
+      <h2>Album info</h2>
+      <dl>
+        <div>
+          <dt>Photos</dt>
+          <dd id="info-photos">-</dd>
+        </div>
+        <div>
+          <dt>Size</dt>
+          <dd id="info-size">-</dd>
+        </div>
+        <div>
+          <dt>Created</dt>
+          <dd id="info-created">-</dd>
+        </div>
+        <div>
+          <dt>Updated</dt>
+          <dd id="info-updated">-</dd>
+        </div>
+      </dl>
+    </aside>
   </main>
 </Layout>
 
@@ -110,6 +131,8 @@ const theme = getThemeConfig();
   const photoModal = document.querySelector<HTMLElement>("#photo-modal");
   const modalImage = document.querySelector<HTMLImageElement>("#modal-image");
   const modalCaption = document.querySelector<HTMLElement>("#modal-caption");
+  const albumInfoModal = document.querySelector<HTMLElement>("#album-info-modal");
+  const helpButton = document.querySelector<HTMLButtonElement>(".help-button");
   const loadMorePhotosButton = document.querySelector<HTMLButtonElement>("#load-more-photos");
   let loadedPhotoCount = 0;
   let hasMorePhotos = false;
@@ -218,6 +241,13 @@ const theme = getThemeConfig();
     ].join("");
   }
 
+  function renderAlbumInfo(album: Album, totalPhotos: number) {
+    setText("#info-photos", totalPhotos.toLocaleString("en-US"));
+    setText("#info-size", album.size);
+    setText("#info-created", album.createdAt);
+    setText("#info-updated", album.updatedAt);
+  }
+
   async function renderAlbum() {
     const albumId = currentAlbumId();
     const photoGrid = document.querySelector<HTMLElement>("#photo-grid");
@@ -242,6 +272,7 @@ const theme = getThemeConfig();
 
       document.title = `${siteTitle} | ${album.title}`;
       renderBreadcrumbs(album);
+      renderAlbumInfo(album, pagination.total);
       setText("#album-title", album.title);
       setText("#album-description", album.description);
 
@@ -305,6 +336,33 @@ const theme = getThemeConfig();
     modalImage.alt = "";
     modalCaption.textContent = "";
     document.body.classList.remove("modal-open");
+  }
+
+  function openAlbumInfoModal() {
+    if (!albumInfoModal || !helpButton) {
+      return;
+    }
+
+    albumInfoModal.hidden = false;
+    helpButton.setAttribute("aria-expanded", "true");
+  }
+
+  function closeAlbumInfoModal() {
+    if (!albumInfoModal || !helpButton) {
+      return;
+    }
+
+    albumInfoModal.hidden = true;
+    helpButton.setAttribute("aria-expanded", "false");
+  }
+
+  function toggleAlbumInfoModal() {
+    if (!albumInfoModal || albumInfoModal.hidden) {
+      openAlbumInfoModal();
+      return;
+    }
+
+    closeAlbumInfoModal();
   }
 
   function updateLoadMorePhotosButton() {
@@ -383,6 +441,15 @@ const theme = getThemeConfig();
       return;
     }
 
+    if (target.closest(".help-button")) {
+      toggleAlbumInfoModal();
+      return;
+    }
+
+    if (albumInfoModal && !albumInfoModal.hidden && !target.closest("#album-info-modal")) {
+      closeAlbumInfoModal();
+    }
+
     const photoCard = target.closest<HTMLElement>(".photo-card");
     if (!photoCard) {
       return;
@@ -409,6 +476,10 @@ const theme = getThemeConfig();
   });
 
   document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && albumInfoModal && !albumInfoModal.hidden) {
+      closeAlbumInfoModal();
+    }
+
     if (event.key === "Escape" && photoModal && !photoModal.hidden) {
       closePhotoModal();
     }
@@ -426,7 +497,15 @@ const theme = getThemeConfig();
 
 <style>
   .detail-page {
-    padding: 44px 0 110px;
+    padding: 48px 0 110px;
+  }
+
+  .detail-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 48px;
   }
 
   .breadcrumb {
@@ -434,7 +513,7 @@ const theme = getThemeConfig();
     align-items: center;
     flex-wrap: wrap;
     gap: 4px;
-    margin-bottom: 48px;
+    margin: 0;
     color: var(--theme-muted);
     font-size: 16px;
     font-weight: 600;
@@ -454,57 +533,48 @@ const theme = getThemeConfig();
   }
 
   .album-hero {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    display: block;
     gap: 34px;
-    align-items: start;
-    margin-bottom: 38px;
+    margin-bottom: 48px;
   }
 
   .hero-content {
+    display: flex;
+    align-items: baseline;
+    gap: 36px;
     min-height: 0;
   }
 
   .hero-content .page-title {
-    display: inline-block;
-    margin: 0 42px 0 0;
-    font-size: clamp(52px, 5.8vw, 70px);
-    vertical-align: middle;
+    flex: 0 0 auto;
+    margin: 0;
+    font-size: clamp(54px, 5.6vw, 68px);
   }
 
   .hero-content .lead {
-    display: inline;
+    max-width: 780px;
     color: var(--theme-muted);
-    font-size: 23px;
-    font-weight: 600;
+    font-size: 22px;
+    font-weight: 500;
     line-height: 1.7;
   }
 
   .album-controls {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 24px;
-    margin-bottom: 32px;
+    display: none;
   }
 
   .meta-chips,
-  .actions,
   .toolbar-chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .actions {
     align-items: center;
-    justify-content: flex-end;
+    gap: 8px;
   }
 
   .photo-grid {
     display: grid;
     grid-template-columns: repeat(var(--photo-grid-columns), minmax(0, 1fr));
-    gap: 8px 10px;
+    gap: 10px;
   }
 
   .load-state {
@@ -579,13 +649,13 @@ const theme = getThemeConfig();
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 42px;
-    height: 42px;
+    width: 32px;
+    height: 32px;
     border: 1px solid var(--theme-border);
     border-radius: var(--radius-pill);
     background: var(--theme-surface);
     color: var(--theme-text);
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 800;
     line-height: 1;
   }
@@ -613,8 +683,8 @@ const theme = getThemeConfig();
   }
 
   :global(.chip.small) {
-    min-height: 30px;
-    padding: 0 14px;
+    min-height: 31px;
+    padding: 0 15px;
     font-size: 13px;
   }
 
@@ -645,9 +715,9 @@ const theme = getThemeConfig();
   :global(.photo-card) {
     display: block;
     width: 100%;
-    padding: 8px;
+    padding: 7px;
     border: 1px solid var(--theme-border);
-    border-radius: var(--radius-card);
+    border-radius: 16px;
     background: var(--theme-surface);
     color: inherit;
     overflow: hidden;
@@ -755,8 +825,8 @@ const theme = getThemeConfig();
 
   .modal-close {
     position: absolute;
-    right: -18px;
-    top: -18px;
+    right: -20px;
+    top: -20px;
     z-index: 2;
     display: inline-flex;
     align-items: center;
@@ -767,9 +837,83 @@ const theme = getThemeConfig();
     border-radius: var(--radius-pill);
     background: var(--theme-surface);
     color: var(--theme-text);
-    font-size: 22px;
+    font-size: 0;
     font-weight: 800;
     line-height: 1;
+  }
+
+  .modal-close::before,
+  .modal-close::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 14px;
+    height: 2px;
+    border-radius: var(--radius-pill);
+    background: currentColor;
+    transform-origin: center;
+  }
+
+  .modal-close::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+
+  .modal-close::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+  }
+
+  .album-info-modal[hidden] {
+    display: none;
+  }
+
+  .album-info-modal {
+    position: fixed;
+    right: 48px;
+    top: 92px;
+    z-index: 30;
+    width: min(calc(100vw - 32px), 340px);
+    padding: 24px 24px 28px;
+    border: 1px solid var(--theme-border);
+    border-radius: 18px;
+    background: var(--theme-surface);
+    box-shadow: 0 18px 50px rgb(0 0 0 / 14%);
+  }
+
+  .album-info-modal h2 {
+    margin: 0 0 22px;
+    color: var(--theme-text);
+    font-size: 24px;
+    font-weight: 900;
+    line-height: 1.1;
+  }
+
+  .album-info-modal dl {
+    display: grid;
+    gap: 24px;
+    margin: 0;
+  }
+
+  .album-info-modal dl div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(90px, auto);
+    gap: 22px;
+    align-items: baseline;
+  }
+
+  .album-info-modal dt {
+    color: var(--theme-muted);
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .album-info-modal dd {
+    margin: 0;
+    color: var(--theme-text);
+    font-size: 15px;
+    font-weight: 800;
+    text-align: left;
+    white-space: nowrap;
   }
 
   #modal-caption {
@@ -953,9 +1097,18 @@ const theme = getThemeConfig();
   }
 
   @media (max-width: 900px) {
+    .detail-topbar {
+      align-items: flex-start;
+      margin-bottom: 32px;
+    }
+
     .album-hero {
       display: block;
       margin-bottom: 24px;
+    }
+
+    .hero-content {
+      display: block;
     }
 
     .hero-content .page-title {
@@ -967,10 +1120,6 @@ const theme = getThemeConfig();
       display: block;
     }
 
-    .actions {
-      display: none;
-    }
-
     .photo-grid {
       grid-template-columns: repeat(var(--photo-grid-columns-tablet), minmax(0, 1fr));
       gap: 10px;
@@ -980,6 +1129,11 @@ const theme = getThemeConfig();
   @media (max-width: 640px) {
     .detail-page {
       padding: 29px 0 0;
+    }
+
+    .detail-topbar {
+      display: block;
+      margin-bottom: 24px;
     }
 
     .breadcrumb {
@@ -1001,12 +1155,13 @@ const theme = getThemeConfig();
     }
 
     .album-controls {
-      display: block;
-      margin-bottom: 18px;
+      display: none;
     }
 
     .toolbar-chips {
-      display: none;
+      display: flex;
+      justify-content: flex-start;
+      margin-top: 14px;
     }
 
     .photo-grid {
@@ -1027,6 +1182,12 @@ const theme = getThemeConfig();
     .modal-close {
       right: 0;
       top: -52px;
+    }
+
+    .album-info-modal {
+      right: 16px;
+      top: 78px;
+      padding: 23px 24px 27px;
     }
   }
 </style>
