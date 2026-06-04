@@ -1,16 +1,28 @@
 package api
 
+type Breadcrumb struct {
+	ID    string          `json:"id"`
+	Title string          `json:"title"`
+	Path  string          `json:"path"`
+	Links BreadcrumbLinks `json:"links"`
+}
+
+type BreadcrumbLinks struct {
+	Self string `json:"self"`
+}
+
 type Album struct {
-	ID           string     `json:"id"`
-	Title        string     `json:"title"`
-	Description  string     `json:"description"`
-	Date         *string    `json:"date"`
-	CreatedAt    string     `json:"created_at"`
-	UpdatedAt    string     `json:"updated_at"`
-	PhotoCount   int        `json:"photo_count"`
-	CoverPhotoID *string    `json:"cover_photo_id"`
-	Visibility   string     `json:"visibility"`
-	Links        AlbumLinks `json:"links"`
+	ID           string       `json:"id"`
+	Title        string       `json:"title"`
+	Description  string       `json:"description"`
+	Date         *string      `json:"date"`
+	CreatedAt    string       `json:"created_at"`
+	UpdatedAt    string       `json:"updated_at"`
+	PhotoCount   int          `json:"photo_count"`
+	CoverPhotoID *string      `json:"cover_photo_id"`
+	Visibility   string       `json:"visibility"`
+	Breadcrumbs  []Breadcrumb `json:"breadcrumbs"`
+	Links        AlbumLinks   `json:"links"`
 }
 
 type AlbumLinks struct {

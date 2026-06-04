@@ -23,7 +23,7 @@ func BuildLibrary(files []scanner.AssetFile) (*Library, error) {
 			albumPath = ""
 		}
 
-		for _, p := range expandAlbumPaths(albumPath) {
+		for _, p := range ExpandAlbumPaths(albumPath) {
 			albumPaths[p] = struct{}{}
 		}
 	}
@@ -88,7 +88,7 @@ func BuildLibrary(files []scanner.AssetFile) (*Library, error) {
 	}, nil
 }
 
-func expandAlbumPaths(albumPath string) []string {
+func ExpandAlbumPaths(albumPath string) []string {
 	if albumPath == "" {
 		return []string{""}
 	}

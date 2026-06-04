@@ -86,8 +86,17 @@ func (s *Server) handleGetAlbum(w http.ResponseWriter, r *http.Request, albumID 
 		return
 	}
 
+	breadcrumbRows, err := s.store.ListAlbumBreadcrumbsBySlug(albumID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error", "failed to list album breadcrumbs")
+		return
+	}
+
+	album := albumFromRow(*row)
+	album.Breadcrumbs = breadcrumbsFromRows(breadcrumbRows)
+
 	writeJSON(w, http.StatusOK, AlbumResponse{
-		Album: albumFromRow(*row),
+		Album: album,
 	})
 }
 
@@ -113,12 +122,30 @@ func albumFromRow(row storage.AlbumRow) Album {
 		PhotoCount:   row.PhotoCount,
 		CoverPhotoID: coverPhotoID,
 		Visibility:   "private",
+		Breadcrumbs:  []Breadcrumb{},
 		Links: AlbumLinks{
 			Self:   "/api/albums/" + row.Slug,
 			Photos: "/api/albums/" + row.Slug + "/photos",
 			Cover:  coverURL,
 		},
 	}
+}
+
+func breadcrumbsFromRows(rows []storage.AlbumBreadcrumbRow) []Breadcrumb {
+	breadcrumbs := make([]Breadcrumb, 0, len(rows))
+
+	for _, row := range rows {
+		breadcrumbs = append(breadcrumbs, Breadcrumb{
+			ID:    row.Slug,
+			Title: row.Title,
+			Path:  row.Path,
+			Links: BreadcrumbLinks{
+				Self: "/albums/" + row.Slug + "/",
+			},
+		})
+	}
+
+	return breadcrumbs
 }
 
 func parseIntQuery(r *http.Request, name string, fallback int) int {
