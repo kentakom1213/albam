@@ -40,7 +40,7 @@ func (s *Storage) SaveLibrary(library *indexer.Library) error {
 		albumPath := albumPathFromAssetPath(asset.Path)
 		albumID := albumIDByPath[albumPath]
 
-		if err := upsertAsset(tx, asset, albumID); err != nil {
+		if err := s.upsertAsset(tx, asset, albumID); err != nil {
 			return err
 		}
 	}
@@ -101,10 +101,16 @@ WHERE path = ?
 	return err
 }
 
-func upsertAsset(tx *sql.Tx, asset model.Asset, albumID int64) error {
-	_, err := tx.Exec(`
+func (s *Storage) upsertAsset(tx *sql.Tx, asset model.Asset, albumID int64) error {
+	slug, err := s.generateUniquePhotoSlug(tx)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(`
 INSERT INTO assets (
 	album_id,
+	slug,
 	path,
 	filename,
 	ext,
@@ -112,7 +118,7 @@ INSERT INTO assets (
 	file_mtime,
 	updated_at
 )
-VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 ON CONFLICT(path) DO UPDATE SET
 	album_id = excluded.album_id,
 	filename = excluded.filename,
@@ -120,7 +126,15 @@ ON CONFLICT(path) DO UPDATE SET
 	size_bytes = excluded.size_bytes,
 	file_mtime = excluded.file_mtime,
 	updated_at = CURRENT_TIMESTAMP
-`, albumID, asset.Path, asset.Filename, asset.Ext, asset.Size, asset.ModTime)
+`,
+		albumID,
+		slug,
+		asset.Path,
+		asset.Filename,
+		asset.Ext,
+		asset.Size,
+		asset.ModTime,
+	)
 
 	return err
 }

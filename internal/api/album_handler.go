@@ -96,7 +96,7 @@ func albumFromRow(row storage.AlbumRow) Album {
 	var coverURL *string
 
 	if row.CoverPhotoID.Valid {
-		id := strconv.FormatInt(row.CoverPhotoID.Int64, 10)
+		id := row.CoverPhotoID.String
 		coverPhotoID = &id
 
 		url := "/media/photos/" + id + "/thumb"

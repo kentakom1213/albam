@@ -13,16 +13,17 @@ type AlbumRow struct {
 	CreatedAt    string
 	UpdatedAt    string
 	PhotoCount   int
-	CoverPhotoID sql.NullInt64
+	CoverPhotoID sql.NullString
 }
 
 type AssetRow struct {
 	ID        int64
+	Slug      string
 	AlbumID   int64
 	Path      string
 	Filename  string
 	Ext       string
-	Size      string
+	Size      int64
 	ModTime   string
 	CreatedAt string
 	UpdatedAt string
@@ -43,7 +44,13 @@ SELECT
 	albums.created_at,
 	albums.updated_at,
 	COUNT(assets.id) AS photo_count,
-	MIN(assets.id) AS cover_photo_id
+	(
+		SELECT a.slug
+		FROM assets AS a
+		WHERE a.album_id = albums.id
+		ORDER BY a.path
+		LIMIT 1
+	) AS cover_photo_id
 FROM albums
 LEFT JOIN assets ON assets.album_id = albums.id
 GROUP BY albums.id
@@ -94,7 +101,13 @@ SELECT
     albums.created_at,
     albums.updated_at,
     COUNT(assets.id) AS photo_count,
-	MIN(assets.id) AS cover_photo_id
+	(
+		SELECT a.slug
+		FROM assets AS a
+		WHERE a.album_id = albums.id
+		ORDER BY a.path
+		LIMIT 1
+	) AS cover_photo_id
 FROM albums
 LEFT JOIN assets ON assets.album_id = albums.id
 WHERE albums.slug = ?
@@ -126,6 +139,7 @@ func (s *Storage) GetAssetByID(id int64) (*AssetRow, error) {
 	err := s.db.QueryRow(`
 SELECT
     id,
+	slug,
     album_id,
     path,
     filename,
@@ -138,6 +152,7 @@ FROM assets
 WHERE id = ?
 `, id).Scan(
 		&asset.ID,
+		&asset.Slug,
 		&asset.AlbumID,
 		&asset.Path,
 		&asset.Filename,
@@ -167,6 +182,7 @@ func (s *Storage) ListAssetsByAlbumSlug(slug string, limit, offset int) ([]Asset
 	rows, err := s.db.Query(`
 SELECT
     assets.id,
+	assets.slug,
     assets.album_id,
     assets.path,
     assets.filename,
@@ -191,6 +207,7 @@ LIMIT ? OFFSET ?
 		var asset AssetRow
 		if err := rows.Scan(
 			&asset.ID,
+			&asset.Slug,
 			&asset.AlbumID,
 			&asset.Path,
 			&asset.Filename,
@@ -216,7 +233,15 @@ LIMIT ? OFFSET ?
 func (s *Storage) countAlbums() (int, error) {
 	var total int
 
-	err := s.db.QueryRow(`SELECT COUNT(*) FROM albums`).Scan(&total)
+	err := s.db.QueryRow(`
+SELECT COUNT(*)
+FROM albums
+WHERE EXISTS (
+	SELECT 1
+	FROM assets
+	WHERE assets.album_id = albums.id
+)
+`).Scan(&total)
 	if err != nil {
 		return 0, err
 	}

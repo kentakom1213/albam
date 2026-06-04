@@ -72,6 +72,7 @@ func BuildLibrary(files []scanner.AssetFile) (*Library, error) {
 
 		assets = append(assets, model.Asset{
 			ID:       int64(i + 1),
+			Slug:     "",
 			AlbumID:  albumID,
 			Path:     file.RelPath,
 			Filename: file.Filename,
