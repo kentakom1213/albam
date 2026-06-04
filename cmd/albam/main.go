@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/kentakom1213/albam/internal/api"
+	"github.com/kentakom1213/albam/internal/cache"
 	"github.com/kentakom1213/albam/internal/config"
 	"github.com/kentakom1213/albam/internal/indexer"
 	"github.com/kentakom1213/albam/internal/scanner"
@@ -134,7 +135,32 @@ func runIndex(args []string) error {
 		return err
 	}
 
-	fmt.Printf("indexed %d albums and %d assets\n", len(library.Albums), len(library.Assets))
+	// 削除処理
+	keepPaths := make([]string, 0, len(files))
+	for _, file := range files {
+		keepPaths = append(keepPaths, file.RelPath)
+	}
+
+	pruneResult, err := store.PruneAssetsByPaths(keepPaths)
+	if err != nil {
+		return err
+	}
+
+	removedPhotoIDs := make([]int64, 0, len(pruneResult.Removed))
+	for _, asset := range pruneResult.Removed {
+		removedPhotoIDs = append(removedPhotoIDs, asset.ID)
+	}
+
+	if err := cache.RemovePhotoVariantCaches(cfg.Media.CacheDir, removedPhotoIDs); err != nil {
+		return err
+	}
+
+	fmt.Printf(
+		"indexed %d albums and %d assets, removed %d assets\n",
+		len(library.Albums),
+		len(library.Assets),
+		len(pruneResult.Removed),
+	)
 	return nil
 }
 
