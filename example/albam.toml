@@ -13,8 +13,8 @@ allow_original_download = false
 path = ".albam/db.sqlite"
 
 [build]
-out_dir = ".aubam/public"
+out_dir = ".albam/public"
 
 [theme]
 name = "default"
-dir = "themes/default"
+dir = "../../albam-frontend/themes/default"

@@ -1,0 +1,114 @@
+package imageproc
+
+import (
+	"image"
+	"image/color"
+	"image/png"
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestFitSize(t *testing.T) {
+	tests := []struct {
+		name         string
+		srcW, srcH   int
+		maxW, maxH   int
+		wantW, wantH int
+	}{
+		{
+			name:  "landscape",
+			srcW:  4000,
+			srcH:  3000,
+			maxW:  1600,
+			maxH:  1600,
+			wantW: 1600,
+			wantH: 1200,
+		},
+		{
+			name:  "portrait",
+			srcW:  3000,
+			srcH:  4000,
+			maxW:  1600,
+			maxH:  1600,
+			wantW: 1200,
+			wantH: 1600,
+		},
+		{
+			name:  "small image is not enlarged",
+			srcW:  300,
+			srcH:  200,
+			maxW:  512,
+			maxH:  512,
+			wantW: 300,
+			wantH: 200,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotW, gotH := FitSize(tt.srcW, tt.srcH, tt.maxW, tt.maxH)
+			if gotW != tt.wantW || gotH != tt.wantH {
+				t.Fatalf("FitSize() = (%d, %d), want (%d, %d)", gotW, gotH, tt.wantW, tt.wantH)
+			}
+		})
+	}
+}
+
+func TestEnsureJPEGVariant(t *testing.T) {
+	dir := t.TempDir()
+
+	srcPath := filepath.Join(dir, "src.png")
+	dstPath := filepath.Join(dir, "cache", "thumb.jpg")
+
+	src := image.NewRGBA(image.Rect(0, 0, 100, 50))
+	for y := 0; y < 50; y++ {
+		for x := 0; x < 100; x++ {
+			src.Set(x, y, color.RGBA{R: 255, A: 255})
+		}
+	}
+
+	f, err := os.Create(srcPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := png.Encode(f, src); err != nil {
+		_ = f.Close()
+		t.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	created, err := EnsureJPEGVariant(srcPath, dstPath, Options{
+		MaxWidth:  25,
+		MaxHeight: 25,
+		Quality:   80,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !created {
+		t.Fatal("first call should create cache")
+	}
+
+	info, err := os.Stat(dstPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Size() == 0 {
+		t.Fatal("cached file is empty")
+	}
+
+	created, err = EnsureJPEGVariant(srcPath, dstPath, Options{
+		MaxWidth:  25,
+		MaxHeight: 25,
+		Quality:   80,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if created {
+		t.Fatal("second call should reuse cache")
+	}
+}

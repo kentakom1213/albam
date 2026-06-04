@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/kentakom1213/albam/internal/storage"
@@ -54,7 +53,7 @@ func (s *Server) handleListAlbumPhotos(w http.ResponseWriter, r *http.Request, a
 }
 
 func photoFromRow(row storage.AssetRow, albumID string) Photo {
-	photoID := fmt.Sprint(row.ID)
+	photoID := row.Slug
 
 	return Photo{
 		ID:          photoID,

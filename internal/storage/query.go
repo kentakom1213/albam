@@ -6,22 +6,24 @@ import (
 )
 
 type AlbumRow struct {
-	ID         int64
-	Path       string
-	Slug       string
-	Title      string
-	CreatedAt  string
-	UpdatedAt  string
-	PhotoCount int
+	ID           int64
+	Path         string
+	Slug         string
+	Title        string
+	CreatedAt    string
+	UpdatedAt    string
+	PhotoCount   int
+	CoverPhotoID sql.NullString
 }
 
 type AssetRow struct {
 	ID        int64
+	Slug      string
 	AlbumID   int64
 	Path      string
 	Filename  string
 	Ext       string
-	Size      string
+	Size      int64
 	ModTime   string
 	CreatedAt string
 	UpdatedAt string
@@ -41,10 +43,18 @@ SELECT
 	albums.title,
 	albums.created_at,
 	albums.updated_at,
-	COUNT(assets.id) AS photo_count
+	COUNT(assets.id) AS photo_count,
+	(
+		SELECT a.slug
+		FROM assets AS a
+		WHERE a.album_id = albums.id
+		ORDER BY a.path
+		LIMIT 1
+	) AS cover_photo_id
 FROM albums
 LEFT JOIN assets ON assets.album_id = albums.id
 GROUP BY albums.id
+HAVING COUNT(assets.id) > 0
 ORDER BY albums.path
 LIMIT ? OFFSET ?
 `, limit, offset)
@@ -64,6 +74,7 @@ LIMIT ? OFFSET ?
 			&album.CreatedAt,
 			&album.UpdatedAt,
 			&album.PhotoCount,
+			&album.CoverPhotoID,
 		); err != nil {
 			return nil, 0, err
 		}
@@ -89,7 +100,14 @@ SELECT
     albums.title,
     albums.created_at,
     albums.updated_at,
-    COUNT(assets.id) AS photo_count
+    COUNT(assets.id) AS photo_count,
+	(
+		SELECT a.slug
+		FROM assets AS a
+		WHERE a.album_id = albums.id
+		ORDER BY a.path
+		LIMIT 1
+	) AS cover_photo_id
 FROM albums
 LEFT JOIN assets ON assets.album_id = albums.id
 WHERE albums.slug = ?
@@ -102,6 +120,7 @@ GROUP BY albums.id
 		&album.CreatedAt,
 		&album.UpdatedAt,
 		&album.PhotoCount,
+		&album.CoverPhotoID,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -114,6 +133,46 @@ GROUP BY albums.id
 	return &album, nil
 }
 
+func (s *Storage) GetAssetByID(id int64) (*AssetRow, error) {
+	var asset AssetRow
+
+	err := s.db.QueryRow(`
+SELECT
+    id,
+	slug,
+    album_id,
+    path,
+    filename,
+    ext,
+    size_bytes,
+    file_mtime,
+    created_at,
+    updated_at
+FROM assets
+WHERE id = ?
+`, id).Scan(
+		&asset.ID,
+		&asset.Slug,
+		&asset.AlbumID,
+		&asset.Path,
+		&asset.Filename,
+		&asset.Ext,
+		&asset.Size,
+		&asset.ModTime,
+		&asset.CreatedAt,
+		&asset.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return &asset, nil
+}
+
 func (s *Storage) ListAssetsByAlbumSlug(slug string, limit, offset int) ([]AssetRow, int, error) {
 	total, err := s.countAssetsByAlbumSlug(slug)
 	if err != nil {
@@ -123,6 +182,7 @@ func (s *Storage) ListAssetsByAlbumSlug(slug string, limit, offset int) ([]Asset
 	rows, err := s.db.Query(`
 SELECT
     assets.id,
+	assets.slug,
     assets.album_id,
     assets.path,
     assets.filename,
@@ -147,6 +207,7 @@ LIMIT ? OFFSET ?
 		var asset AssetRow
 		if err := rows.Scan(
 			&asset.ID,
+			&asset.Slug,
 			&asset.AlbumID,
 			&asset.Path,
 			&asset.Filename,
@@ -172,7 +233,15 @@ LIMIT ? OFFSET ?
 func (s *Storage) countAlbums() (int, error) {
 	var total int
 
-	err := s.db.QueryRow(`SELECT COUNT(*) FROM albums`).Scan(&total)
+	err := s.db.QueryRow(`
+SELECT COUNT(*)
+FROM albums
+WHERE EXISTS (
+	SELECT 1
+	FROM assets
+	WHERE assets.album_id = albums.id
+)
+`).Scan(&total)
 	if err != nil {
 		return 0, err
 	}

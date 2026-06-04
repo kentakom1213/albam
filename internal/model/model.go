@@ -12,6 +12,7 @@ type Album struct {
 
 type Asset struct {
 	ID       int64
+	Slug     string
 	AlbumID  int64
 	Path     string
 	Filename string

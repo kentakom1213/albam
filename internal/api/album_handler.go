@@ -92,6 +92,17 @@ func (s *Server) handleGetAlbum(w http.ResponseWriter, r *http.Request, albumID 
 }
 
 func albumFromRow(row storage.AlbumRow) Album {
+	var coverPhotoID *string
+	var coverURL *string
+
+	if row.CoverPhotoID.Valid {
+		id := row.CoverPhotoID.String
+		coverPhotoID = &id
+
+		url := "/media/photos/" + id + "/thumb"
+		coverURL = &url
+	}
+
 	return Album{
 		ID:           row.Slug,
 		Title:        row.Title,
@@ -100,13 +111,13 @@ func albumFromRow(row storage.AlbumRow) Album {
 		CreatedAt:    row.CreatedAt,
 		UpdatedAt:    row.UpdatedAt,
 		PhotoCount:   row.PhotoCount,
-		CoverPhotoID: nil,
+		CoverPhotoID: coverPhotoID,
 		Visibility:   "private",
 		Tags:         []Tag{},
 		Links: AlbumLinks{
 			Self:   "/api/albums/" + row.Slug,
 			Photos: "/api/albums/" + row.Slug + "/photos",
-			Cover:  nil,
+			Cover:  coverURL,
 		},
 	}
 }
