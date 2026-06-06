@@ -40,6 +40,7 @@ func (s *Server) RoutesWithStatic(publicDir string) (http.Handler, error) {
 }
 
 func (s *Server) registerDynamicRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("/api/config", s.handleGetConfig)
 	mux.HandleFunc("/api/albums", s.handleListAlbums)
 	mux.HandleFunc("/api/albums/", s.handleAlbumSubroutes)
 	mux.HandleFunc("/api/photos/", s.handlePhotoSubroutes)

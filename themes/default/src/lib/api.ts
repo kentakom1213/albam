@@ -92,6 +92,10 @@ export type AlbumPhotosResult = {
   pagination: Pagination;
 };
 
+export type ApiConfig = {
+  enableOriginalDownload: boolean;
+};
+
 export type AlbumsResult = {
   albums: Album[];
   pagination: Pagination;
@@ -113,6 +117,10 @@ type PhotosResponse = {
 
 type PhotoResponse = {
   photo: ApiPhoto;
+};
+
+type ConfigResponse = {
+  enable_original_download: boolean;
 };
 
 type ApiErrorResponse = {
@@ -311,4 +319,12 @@ export async function getAlbumPhotos(albumId: string): Promise<Photo[]> {
 export async function getPhoto(photoId: string): Promise<Photo> {
   const body = await request<PhotoResponse>(`photos/${photoId}`);
   return toPhoto(body.photo);
+}
+
+export async function getApiConfig(): Promise<ApiConfig> {
+  const body = await request<ConfigResponse>("config");
+
+  return {
+    enableOriginalDownload: body.enable_original_download,
+  };
 }

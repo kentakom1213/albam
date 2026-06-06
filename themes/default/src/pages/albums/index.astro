@@ -122,7 +122,7 @@ const theme = getThemeConfig();
 </Layout>
 
 <script>
-  import { formatCompactDate, formatCompactMonth, getAlbum, getAlbumPhotosWithPagination, getPhoto } from "../../lib/api";
+  import { formatCompactDate, formatCompactMonth, getAlbum, getAlbumPhotosWithPagination, getApiConfig, getPhoto } from "../../lib/api";
   import type { Album, Breadcrumb, Photo } from "../../lib/api";
   import { buildBalancedJustifiedLayout } from "../../lib/balancedJustifiedLayout";
 
@@ -136,6 +136,7 @@ const theme = getThemeConfig();
   const albumInfoModal = document.querySelector<HTMLElement>("#album-info-modal");
   const helpButton = document.querySelector<HTMLButtonElement>(".help-button");
   const loadMorePhotosButton = document.querySelector<HTMLButtonElement>("#load-more-photos");
+  let enableOriginalDownload = false;
   let renderedPhotos: Photo[] = [];
   let loadedPhotoCount = 0;
   let hasMorePhotos = false;
@@ -206,6 +207,10 @@ const theme = getThemeConfig();
         </div>
       </button>
     `;
+  }
+
+  function modalSrc(originalSrc: string, previewSrc: string) {
+    return enableOriginalDownload ? originalSrc || previewSrc : previewSrc || originalSrc;
   }
 
   function layoutOptions(width: number) {
@@ -352,11 +357,13 @@ const theme = getThemeConfig();
     }
 
     try {
-      const [album, photosResult] = await Promise.all([
+      const [album, photosResult, apiConfig] = await Promise.all([
         getAlbum(albumId),
         getAlbumPhotosWithPagination(albumId),
+        getApiConfig(),
       ]);
       const { photos, pagination } = photosResult;
+      enableOriginalDownload = apiConfig.enableOriginalDownload;
       loadedPhotoCount = photos.length;
       hasMorePhotos = pagination.has_next;
       const visibleDate = formatCompactDate(album.createdAt);
@@ -519,9 +526,11 @@ const theme = getThemeConfig();
 
     try {
       const photo = await getPhoto(photoId);
+      const previewSrc = photo.previewSrc ?? photo.src ?? "";
+      const originalSrc = photo.originalSrc ?? previewSrc;
       openPhotoModal(
-        photo.originalSrc ?? photo.previewSrc ?? photo.src ?? "",
-        photo.previewSrc ?? photo.src ?? "",
+        modalSrc(originalSrc, previewSrc),
+        previewSrc,
         photo.title,
       );
     } catch (error) {
@@ -555,9 +564,12 @@ const theme = getThemeConfig();
       return;
     }
 
+    const previewSrc = photoCard.dataset.previewSrc ?? "";
+    const originalSrc = photoCard.dataset.originalSrc ?? previewSrc;
+
     openPhotoModal(
-      photoCard.dataset.originalSrc ?? "",
-      photoCard.dataset.previewSrc ?? "",
+      modalSrc(originalSrc, previewSrc),
+      previewSrc,
       photoCard.dataset.title ?? "Photo",
       photoCard.dataset.photoId ?? "",
       true,
