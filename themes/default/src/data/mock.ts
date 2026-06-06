@@ -16,6 +16,10 @@ export type Photo = {
   title: string;
   albumId: string;
   src?: string;
+  width: number;
+  height: number;
+  aspectRatio: number;
+  favorite?: boolean;
   tone?: Album["tone"];
 };
 
@@ -143,21 +147,6 @@ export const albums: Album[] = [
   },
 ];
 
-const photoTitles = [
-  "beach-001",
-  "coffee-002",
-  "flower-003",
-  "sky-004",
-  "room-005",
-  "sun-006",
-  "street-007",
-  "walk-008",
-  "green-009",
-  "blue-010",
-  "purple-011",
-  "window-012",
-];
-
 const tones: Photo["tone"][] = [
   "peach",
   "linen",
@@ -173,9 +162,29 @@ const tones: Photo["tone"][] = [
   "peach",
 ];
 
-export const photos: Photo[] = photoTitles.map((title, index) => ({
-  id: `photo-${String(index + 1).padStart(3, "0")}`,
-  title,
-  albumId: "weekend-trip",
-  tone: tones[index],
-}));
+const photoShapes = [
+  { width: 1600, height: 900 },
+  { width: 1400, height: 1000 },
+  { width: 1200, height: 900 },
+  { width: 900, height: 1200 },
+  { width: 1000, height: 1000 },
+  { width: 1800, height: 1200 },
+  { width: 900, height: 1350 },
+  { width: 2000, height: 1100 },
+];
+
+export const photos: Photo[] = Array.from({ length: 36 }, (_, index) => {
+  const shape = photoShapes[index % photoShapes.length];
+  const photoNumber = String(index + 1).padStart(3, "0");
+
+  return {
+    id: `photo-${photoNumber}`,
+    title: `photo-${photoNumber}`,
+    albumId: "weekend-trip",
+    width: shape.width,
+    height: shape.height,
+    aspectRatio: shape.width / shape.height,
+    favorite: index % 7 === 0,
+    tone: tones[index % tones.length],
+  };
+});

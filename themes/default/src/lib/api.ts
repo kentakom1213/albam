@@ -80,6 +80,10 @@ export type Photo = {
   src?: string;
   previewSrc?: string;
   originalSrc?: string;
+  width: number;
+  height: number;
+  aspectRatio: number;
+  favorite?: boolean;
   tone?: Album["tone"];
 };
 
@@ -240,6 +244,11 @@ export function toAlbum(album: ApiAlbum, index = 0): Album {
 }
 
 export function toPhoto(photo: ApiPhoto, index = 0): Photo {
+  const width = photo.width && photo.width > 0 ? photo.width : 1000;
+  const height = photo.height && photo.height > 0 ? photo.height : 1000;
+  const aspectRatio =
+    photo.aspect_ratio && photo.aspect_ratio > 0 ? photo.aspect_ratio : width / height;
+
   return {
     id: photo.id,
     title: photo.title ?? photo.filename,
@@ -247,6 +256,10 @@ export function toPhoto(photo: ApiPhoto, index = 0): Photo {
     src: resolveAssetUrl(photo.links.thumb),
     previewSrc: resolveAssetUrl(photo.links.preview),
     originalSrc: resolveAssetUrl(photo.links.original),
+    width,
+    height,
+    aspectRatio,
+    favorite: photo.favorite,
     tone: tones[index % tones.length],
   };
 }

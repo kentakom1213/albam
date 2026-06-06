@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"net/http"
 	"strings"
 
@@ -87,6 +88,8 @@ func (s *Server) handleGetPhoto(w http.ResponseWriter, r *http.Request, photoID 
 
 func photoFromRow(row storage.AssetRow, albumID string) Photo {
 	photoID := row.Slug
+	width := intPtrFromNullInt(row.Width)
+	height := intPtrFromNullInt(row.Height)
 
 	return Photo{
 		ID:          photoID,
@@ -95,9 +98,9 @@ func photoFromRow(row storage.AssetRow, albumID string) Photo {
 		Title:       nil,
 		Description: nil,
 		TakenAt:     nil,
-		Width:       nil,
-		Height:      nil,
-		AspectRatio: nil,
+		Width:       width,
+		Height:      height,
+		AspectRatio: aspectRatioPtr(width, height),
 		Favorite:    false,
 		Links: PhotoLinks{
 			Self:     "/api/photos/" + photoID,
@@ -106,4 +109,22 @@ func photoFromRow(row storage.AssetRow, albumID string) Photo {
 			Original: "/media/photos/" + photoID + "/original",
 		},
 	}
+}
+
+func intPtrFromNullInt(value sql.NullInt64) *int {
+	if !value.Valid || value.Int64 <= 0 {
+		return nil
+	}
+
+	intValue := int(value.Int64)
+	return &intValue
+}
+
+func aspectRatioPtr(width, height *int) *float64 {
+	if width == nil || height == nil || *width <= 0 || *height <= 0 {
+		return nil
+	}
+
+	aspectRatio := float64(*width) / float64(*height)
+	return &aspectRatio
 }

@@ -50,6 +50,15 @@ func TestHandleGetPhoto(t *testing.T) {
 	if body.Photo.Links.Original != "/media/photos/"+assets[0].Slug+"/original" {
 		t.Fatalf("original link = %q", body.Photo.Links.Original)
 	}
+	if body.Photo.Width == nil || *body.Photo.Width != 1600 {
+		t.Fatalf("photo width = %v, want 1600", body.Photo.Width)
+	}
+	if body.Photo.Height == nil || *body.Photo.Height != 900 {
+		t.Fatalf("photo height = %v, want 900", body.Photo.Height)
+	}
+	if body.Photo.AspectRatio == nil || *body.Photo.AspectRatio != float64(1600)/float64(900) {
+		t.Fatalf("photo aspect ratio = %v, want %v", body.Photo.AspectRatio, float64(1600)/float64(900))
+	}
 }
 
 func TestHandleGetPhotoNotFound(t *testing.T) {
@@ -100,6 +109,8 @@ func saveTestLibrary(t *testing.T, store *storage.Storage) {
 				Ext:      ".jpg",
 				Size:     123,
 				ModTime:  time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC),
+				Width:    1600,
+				Height:   900,
 			},
 		},
 	}); err != nil {

@@ -26,6 +26,8 @@ type AssetRow struct {
 	Ext       string
 	Size      int64
 	ModTime   string
+	Width     sql.NullInt64
+	Height    sql.NullInt64
 	CreatedAt string
 	UpdatedAt string
 }
@@ -147,6 +149,8 @@ SELECT
     ext,
     size_bytes,
     file_mtime,
+    width,
+    height,
     created_at,
     updated_at
 FROM assets
@@ -160,6 +164,8 @@ WHERE id = ?
 		&asset.Ext,
 		&asset.Size,
 		&asset.ModTime,
+		&asset.Width,
+		&asset.Height,
 		&asset.CreatedAt,
 		&asset.UpdatedAt,
 	)
@@ -188,6 +194,8 @@ SELECT
     assets.ext,
     assets.size_bytes,
     assets.file_mtime,
+    assets.width,
+    assets.height,
     assets.created_at,
     assets.updated_at
 FROM assets
@@ -203,6 +211,8 @@ WHERE assets.slug = ?
 		&asset.Ext,
 		&asset.Size,
 		&asset.ModTime,
+		&asset.Width,
+		&asset.Height,
 		&asset.CreatedAt,
 		&asset.UpdatedAt,
 	)
@@ -233,6 +243,8 @@ SELECT
     assets.ext,
     assets.size_bytes,
     assets.file_mtime,
+    assets.width,
+    assets.height,
     assets.created_at,
     assets.updated_at
 FROM albums AS root
@@ -264,6 +276,8 @@ LIMIT ? OFFSET ?
 			&asset.Ext,
 			&asset.Size,
 			&asset.ModTime,
+			&asset.Width,
+			&asset.Height,
 			&asset.CreatedAt,
 			&asset.UpdatedAt,
 		); err != nil {

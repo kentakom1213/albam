@@ -116,15 +116,19 @@ INSERT INTO assets (
 	ext,
 	size_bytes,
 	file_mtime,
+	width,
+	height,
 	updated_at
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 ON CONFLICT(path) DO UPDATE SET
 	album_id = excluded.album_id,
 	filename = excluded.filename,
 	ext = excluded.ext,
 	size_bytes = excluded.size_bytes,
 	file_mtime = excluded.file_mtime,
+	width = excluded.width,
+	height = excluded.height,
 	updated_at = CURRENT_TIMESTAMP
 `,
 		albumID,
@@ -134,9 +138,19 @@ ON CONFLICT(path) DO UPDATE SET
 		asset.Ext,
 		asset.Size,
 		asset.ModTime,
+		nullInt(asset.Width),
+		nullInt(asset.Height),
 	)
 
 	return err
+}
+
+func nullInt(value int) any {
+	if value <= 0 {
+		return nil
+	}
+
+	return value
 }
 
 func resolveParentID(albumPath string, albumIDByPath map[string]int64) (int64, bool) {

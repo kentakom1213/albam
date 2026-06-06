@@ -1,11 +1,18 @@
 package scanner
 
 import (
+	"fmt"
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
+
+	_ "golang.org/x/image/webp"
 )
 
 type AssetFile struct {
@@ -15,6 +22,8 @@ type AssetFile struct {
 	Ext      string
 	Size     int64
 	ModTime  time.Time
+	Width    int
+	Height   int
 }
 
 func Scan(root string) ([]AssetFile, error) {
@@ -45,6 +54,11 @@ func Scan(root string) ([]AssetFile, error) {
 				return err
 			}
 
+			width, height, err := readImageSize(path)
+			if err != nil {
+				return err
+			}
+
 			files = append(files, AssetFile{
 				Path:     path,
 				RelPath:  filepath.ToSlash(relPath),
@@ -52,6 +66,8 @@ func Scan(root string) ([]AssetFile, error) {
 				Ext:      strings.ToLower(filepath.Ext(path)),
 				Size:     info.Size(),
 				ModTime:  info.ModTime(),
+				Width:    width,
+				Height:   height,
 			})
 
 			return nil
@@ -71,6 +87,21 @@ func Scan(root string) ([]AssetFile, error) {
 	)
 
 	return files, nil
+}
+
+func readImageSize(path string) (int, int, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return 0, 0, fmt.Errorf("open image for metadata: %w", err)
+	}
+	defer file.Close()
+
+	config, _, err := image.DecodeConfig(file)
+	if err != nil {
+		return 0, 0, fmt.Errorf("decode image metadata: %w", err)
+	}
+
+	return config.Width, config.Height, nil
 }
 
 // TODO: 設定ファイルで読み込めるように

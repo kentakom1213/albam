@@ -19,4 +19,6 @@ type Asset struct {
 	Ext      string
 	Size     int64
 	ModTime  time.Time
+	Width    int
+	Height   int
 }

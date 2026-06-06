@@ -124,16 +124,19 @@ const theme = getThemeConfig();
 <script>
   import { formatCompactDate, formatCompactMonth, getAlbum, getAlbumPhotosWithPagination, getPhoto } from "../../lib/api";
   import type { Album, Breadcrumb, Photo } from "../../lib/api";
+  import { buildBalancedJustifiedLayout } from "../../lib/balancedJustifiedLayout";
 
   const tones = ["peach", "linen", "mint", "sky", "lilac", "lemon"] as const;
   const siteTitle =
     document.querySelector<HTMLElement>(".detail-page")?.dataset.siteTitle ?? "albam";
+  const photoGrid = document.querySelector<HTMLElement>("#photo-grid");
   const photoModal = document.querySelector<HTMLElement>("#photo-modal");
   const modalImage = document.querySelector<HTMLImageElement>("#modal-image");
   const modalCaption = document.querySelector<HTMLElement>("#modal-caption");
   const albumInfoModal = document.querySelector<HTMLElement>("#album-info-modal");
   const helpButton = document.querySelector<HTMLButtonElement>(".help-button");
   const loadMorePhotosButton = document.querySelector<HTMLButtonElement>("#load-more-photos");
+  let renderedPhotos: Photo[] = [];
   let loadedPhotoCount = 0;
   let hasMorePhotos = false;
 
@@ -205,6 +208,96 @@ const theme = getThemeConfig();
     `;
   }
 
+  function layoutOptions(width: number) {
+    if (width < 560) {
+      return {
+        containerWidth: width,
+        gap: 8,
+        targetRowHeight: 150,
+        minRowHeight: 124,
+        maxRowHeight: 190,
+        minTileWidth: 132,
+        maxTileWidth: 320,
+        minItemsPerRow: 2,
+        maxItemsPerRow: 3,
+        avoidSameRowLengthPenalty: 92,
+        avoidSameHeightPenalty: 28,
+        justifyLastRow: false,
+        lastRowMaxHeight: 150,
+      };
+    }
+
+    if (width < 960) {
+      return {
+        containerWidth: width,
+        gap: 10,
+        targetRowHeight: 196,
+        minRowHeight: 150,
+        maxRowHeight: 250,
+        minTileWidth: 150,
+        maxTileWidth: 430,
+        minItemsPerRow: 2,
+        maxItemsPerRow: 5,
+        avoidSameRowLengthPenalty: 108,
+        avoidSameHeightPenalty: 34,
+        justifyLastRow: false,
+        lastRowMaxHeight: 188,
+      };
+    }
+
+    return {
+      containerWidth: width,
+      gap: 10,
+      targetRowHeight: 205,
+      minRowHeight: 175,
+      maxRowHeight: 240,
+      minTileWidth: 145,
+      maxTileWidth: 560,
+      minItemsPerRow: 2,
+      maxItemsPerRow: 6,
+      avoidSameRowLengthPenalty: 120,
+      avoidSameHeightPenalty: 40,
+      justifyLastRow: false,
+      lastRowMaxHeight: 205,
+    };
+  }
+
+  function applyPhotoLayout() {
+    if (!photoGrid || renderedPhotos.length === 0) {
+      return;
+    }
+
+    const containerWidth = photoGrid.clientWidth;
+    const layout = buildBalancedJustifiedLayout(
+      renderedPhotos.map((photo) => ({
+        id: photo.id,
+        width: photo.width,
+        height: photo.height,
+        aspectRatio: photo.aspectRatio,
+      })),
+      layoutOptions(containerWidth),
+    );
+    const itemsById = new Map(layout.items.map((item) => [item.id, item]));
+
+    photoGrid.style.height = `${Math.ceil(layout.height)}px`;
+
+    for (const card of photoGrid.querySelectorAll<HTMLElement>(".photo-card")) {
+      const item = itemsById.get(card.dataset.photoId ?? "");
+
+      if (!item) {
+        continue;
+      }
+
+      card.style.transform = `translate(${formatLayoutPixel(item.x)}, ${formatLayoutPixel(item.y)})`;
+      card.style.width = formatLayoutPixel(item.width);
+      card.style.height = formatLayoutPixel(item.height);
+    }
+  }
+
+  function formatLayoutPixel(value: number) {
+    return `${Number(value.toFixed(3))}px`;
+  }
+
   function setText(selector: string, value: string) {
     const element = document.querySelector<HTMLElement>(selector);
     if (element) {
@@ -250,7 +343,6 @@ const theme = getThemeConfig();
 
   async function renderAlbum() {
     const albumId = currentAlbumId();
-    const photoGrid = document.querySelector<HTMLElement>("#photo-grid");
 
     if (!albumId || !photoGrid) {
       if (photoGrid) {
@@ -286,14 +378,21 @@ const theme = getThemeConfig();
         `;
       }
 
+      renderedPhotos = photos;
+      photoGrid.classList.toggle("is-empty", photos.length === 0);
+      photoGrid.removeAttribute("style");
       photoGrid.innerHTML = photos.length
         ? photos.map(photoCard).join("")
         : `<p class="load-state">No photos indexed yet.</p>`;
+      applyPhotoLayout();
       updateLoadMorePhotosButton();
 
       openDirectLinkedPhoto();
     } catch (error) {
       console.error(error);
+      renderedPhotos = [];
+      photoGrid.classList.add("is-empty");
+      photoGrid.removeAttribute("style");
       photoGrid.innerHTML = `<p class="load-state">Failed to load album.</p>`;
     }
   }
@@ -388,7 +487,6 @@ const theme = getThemeConfig();
 
   async function loadMorePhotos() {
     const albumId = currentAlbumId();
-    const photoGrid = document.querySelector<HTMLElement>("#photo-grid");
     if (!albumId || !photoGrid || !loadMorePhotosButton || !hasMorePhotos) {
       return;
     }
@@ -400,9 +498,11 @@ const theme = getThemeConfig();
       const { photos, pagination } = await getAlbumPhotosWithPagination(albumId, {
         offset: loadedPhotoCount,
       });
-      photoGrid.insertAdjacentHTML("beforeend", photos.map(photoCard).join(""));
+      renderedPhotos = [...renderedPhotos, ...photos];
+      photoGrid.insertAdjacentHTML("beforeend", photos.map((photo, index) => photoCard(photo, loadedPhotoCount + index)).join(""));
       loadedPhotoCount += photos.length;
       hasMorePhotos = pagination.has_next;
+      applyPhotoLayout();
       updateLoadMorePhotosButton();
     } catch (error) {
       console.error(error);
@@ -492,6 +592,14 @@ const theme = getThemeConfig();
     }
   });
 
+  const resizeObserver = new ResizeObserver(() => {
+    applyPhotoLayout();
+  });
+
+  if (photoGrid) {
+    resizeObserver.observe(photoGrid);
+  }
+
   renderAlbum();
 </script>
 
@@ -572,13 +680,19 @@ const theme = getThemeConfig();
   }
 
   .photo-grid {
+    position: relative;
+    width: 100%;
+    min-height: 160px;
+    overflow: visible;
+  }
+
+  .photo-grid:has(.loading-photo-card) {
     display: grid;
     grid-template-columns: repeat(var(--photo-grid-columns), minmax(0, 1fr));
     gap: 10px;
   }
 
   .load-state {
-    grid-column: 1 / -1;
     margin: 0;
     color: var(--theme-muted);
     font-size: 16px;
@@ -713,15 +827,29 @@ const theme = getThemeConfig();
   }
 
   :global(.photo-card) {
+    position: absolute;
+    left: 0;
+    top: 0;
     display: block;
-    width: 100%;
-    padding: 7px;
-    border: 1px solid var(--theme-border);
-    border-radius: 16px;
+    padding: 0;
+    border: 1px solid rgb(0 0 0 / 6%);
+    border-radius: 12px;
     background: var(--theme-surface);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 3%);
     color: inherit;
     overflow: hidden;
     text-align: left;
+    transition:
+      transform 180ms ease,
+      width 180ms ease,
+      height 180ms ease,
+      border-color 160ms ease,
+      box-shadow 160ms ease;
+  }
+
+  :global(.photo-card:hover) {
+    border-color: color-mix(in srgb, var(--theme-current-accent) 30%, var(--theme-border));
+    box-shadow: 0 10px 24px rgb(0 0 0 / 7%);
   }
 
   :global(.photo-card:focus-visible) {
@@ -730,11 +858,13 @@ const theme = getThemeConfig();
   }
 
   :global(.loading-photo-card) {
+    position: static;
     pointer-events: none;
   }
 
   :global(.photo-image) {
-    aspect-ratio: 1;
+    width: 100%;
+    height: 100%;
   }
 
   :global(.loading-image) {
@@ -1090,9 +1220,8 @@ const theme = getThemeConfig();
   }
 
   @media (max-width: 1120px) {
-    .photo-grid {
+    .photo-grid:has(.loading-photo-card) {
       grid-template-columns: repeat(var(--photo-grid-columns-tablet), minmax(0, 1fr));
-      gap: 10px;
     }
   }
 
@@ -1120,9 +1249,22 @@ const theme = getThemeConfig();
       display: block;
     }
 
+  }
+
+  @media (max-width: 760px) {
     .photo-grid {
-      grid-template-columns: repeat(var(--photo-grid-columns-tablet), minmax(0, 1fr));
-      gap: 10px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      height: auto !important;
+    }
+
+    :global(.photo-card) {
+      position: relative;
+      width: auto !important;
+      height: auto !important;
+      transform: none !important;
+      aspect-ratio: 1 / 1;
     }
   }
 
@@ -1165,9 +1307,11 @@ const theme = getThemeConfig();
     }
 
     .photo-grid {
+      min-height: 140px;
+    }
+
+    .photo-grid:has(.loading-photo-card) {
       grid-template-columns: repeat(var(--photo-grid-columns-mobile), minmax(0, 1fr));
-      gap: 10px;
-      padding-bottom: 24px;
     }
 
     .photo-modal {

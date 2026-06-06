@@ -79,6 +79,8 @@ func BuildLibrary(files []scanner.AssetFile) (*Library, error) {
 			Ext:      file.Ext,
 			Size:     file.Size,
 			ModTime:  file.ModTime,
+			Width:    file.Width,
+			Height:   file.Height,
 		})
 	}
 
