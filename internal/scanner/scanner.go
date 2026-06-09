@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kentakom1213/albam/internal/metadata"
 	_ "golang.org/x/image/webp"
 )
 
@@ -22,8 +23,14 @@ type AssetFile struct {
 	Ext      string
 	Size     int64
 	ModTime  time.Time
-	Width    int
-	Height   int
+
+	Width        int
+	Height       int
+	TakenAt      *time.Time
+	GPSLatitude  *float64
+	GPSLongitude *float64
+	CameraMake   *string
+	CameraModel  *string
 }
 
 func Scan(root string) ([]AssetFile, error) {
@@ -59,15 +66,22 @@ func Scan(root string) ([]AssetFile, error) {
 				return err
 			}
 
+			exifMeta := metadata.ReadExif(path)
+
 			files = append(files, AssetFile{
-				Path:     path,
-				RelPath:  filepath.ToSlash(relPath),
-				Filename: filepath.Base(path),
-				Ext:      strings.ToLower(filepath.Ext(path)),
-				Size:     info.Size(),
-				ModTime:  info.ModTime(),
-				Width:    width,
-				Height:   height,
+				Path:         path,
+				RelPath:      filepath.ToSlash(relPath),
+				Filename:     filepath.Base(path),
+				Ext:          strings.ToLower(filepath.Ext(path)),
+				Size:         info.Size(),
+				ModTime:      info.ModTime(),
+				Width:        width,
+				Height:       height,
+				TakenAt:      exifMeta.TakenAt,
+				GPSLatitude:  exifMeta.Latitude,
+				GPSLongitude: exifMeta.Longitude,
+				CameraMake:   exifMeta.CameraMake,
+				CameraModel:  exifMeta.CameraModel,
 			})
 
 			return nil

@@ -71,16 +71,21 @@ func BuildLibrary(files []scanner.AssetFile) (*Library, error) {
 		albumID := albumIDPyPath[albumPath]
 
 		assets = append(assets, model.Asset{
-			ID:       int64(i + 1),
-			Slug:     "",
-			AlbumID:  albumID,
-			Path:     file.RelPath,
-			Filename: file.Filename,
-			Ext:      file.Ext,
-			Size:     file.Size,
-			ModTime:  file.ModTime,
-			Width:    file.Width,
-			Height:   file.Height,
+			ID:           int64(i + 1),
+			Slug:         "",
+			AlbumID:      albumID,
+			Path:         file.RelPath,
+			Filename:     file.Filename,
+			Ext:          file.Ext,
+			Size:         file.Size,
+			ModTime:      file.ModTime,
+			Width:        file.Width,
+			Height:       file.Height,
+			TakenAt:      file.TakenAt,
+			GPSLatitude:  file.GPSLatitude,
+			GPSLongitude: file.GPSLongitude,
+			CameraMake:   file.CameraMake,
+			CameraModel:  file.CameraModel,
 		})
 	}
 

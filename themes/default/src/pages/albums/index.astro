@@ -92,6 +92,9 @@ const theme = getThemeConfig();
       <button class="modal-backdrop" type="button" data-modal-close aria-label="Close photo viewer"></button>
       <figure class="modal-frame">
         <button class="modal-close" type="button" data-modal-close aria-label="Close photo viewer"></button>
+        <div class="modal-loading" aria-hidden="true">
+          <span class="modal-loading-ring"></span>
+        </div>
         <img id="modal-image" alt="" />
         <figcaption id="modal-caption"></figcaption>
       </figure>
@@ -124,7 +127,7 @@ const theme = getThemeConfig();
 <script>
   import { formatCompactDate, formatCompactMonth, getAlbum, getAlbumPhotosWithPagination, getApiConfig, getPhoto } from "../../lib/api";
   import type { Album, Breadcrumb, Photo } from "../../lib/api";
-  import { buildBalancedJustifiedLayout } from "../../lib/balancedJustifiedLayout";
+  import { buildFixedRowLayout } from "../../lib/fixedRowLayout";
 
   const tones = ["peach", "linen", "mint", "sky", "lilac", "lemon"] as const;
   const siteTitle =
@@ -218,17 +221,13 @@ const theme = getThemeConfig();
       return {
         containerWidth: width,
         gap: 8,
-        targetRowHeight: 150,
-        minRowHeight: 124,
-        maxRowHeight: 190,
+        rowHeight: 150,
         minTileWidth: 132,
         maxTileWidth: 320,
-        minItemsPerRow: 2,
+        minScale: 0.82,
+        maxScale: 1.18,
         maxItemsPerRow: 3,
-        avoidSameRowLengthPenalty: 92,
-        avoidSameHeightPenalty: 28,
         justifyLastRow: false,
-        lastRowMaxHeight: 150,
       };
     }
 
@@ -236,34 +235,26 @@ const theme = getThemeConfig();
       return {
         containerWidth: width,
         gap: 10,
-        targetRowHeight: 196,
-        minRowHeight: 150,
-        maxRowHeight: 250,
+        rowHeight: 196,
         minTileWidth: 150,
         maxTileWidth: 430,
-        minItemsPerRow: 2,
+        minScale: 0.82,
+        maxScale: 1.18,
         maxItemsPerRow: 5,
-        avoidSameRowLengthPenalty: 108,
-        avoidSameHeightPenalty: 34,
         justifyLastRow: false,
-        lastRowMaxHeight: 188,
       };
     }
 
     return {
       containerWidth: width,
       gap: 10,
-      targetRowHeight: 205,
-      minRowHeight: 175,
-      maxRowHeight: 240,
+      rowHeight: 205,
       minTileWidth: 145,
       maxTileWidth: 560,
-      minItemsPerRow: 2,
+      minScale: 0.82,
+      maxScale: 1.18,
       maxItemsPerRow: 6,
-      avoidSameRowLengthPenalty: 120,
-      avoidSameHeightPenalty: 40,
       justifyLastRow: false,
-      lastRowMaxHeight: 205,
     };
   }
 
@@ -273,7 +264,7 @@ const theme = getThemeConfig();
     }
 
     const containerWidth = photoGrid.clientWidth;
-    const layout = buildBalancedJustifiedLayout(
+    const layout = buildFixedRowLayout(
       renderedPhotos.map((photo) => ({
         id: photo.id,
         width: photo.width,
@@ -416,6 +407,7 @@ const theme = getThemeConfig();
       }
     }
 
+    photoModal.classList.add("is-loading");
     modalImage.src = src;
     modalImage.alt = title;
     modalImage.dataset.fallbackSrc = fallbackSrc;
@@ -437,6 +429,7 @@ const theme = getThemeConfig();
     }
 
     photoModal.hidden = true;
+    photoModal.classList.remove("is-loading");
     modalImage.removeAttribute("src");
     modalImage.removeAttribute("data-fallback-src");
     modalImage.alt = "";
@@ -601,6 +594,16 @@ const theme = getThemeConfig();
     const fallbackSrc = modalImage.dataset.fallbackSrc;
     if (fallbackSrc && modalImage.src !== fallbackSrc) {
       modalImage.src = fallbackSrc;
+      photoModal?.classList.add("is-loading");
+      return;
+    }
+
+    photoModal?.classList.remove("is-loading");
+  });
+
+  modalImage?.addEventListener("load", () => {
+    if (modalImage.currentSrc) {
+      photoModal?.classList.remove("is-loading");
     }
   });
 
@@ -854,19 +857,20 @@ const theme = getThemeConfig();
     transition:
       transform 180ms ease,
       width 180ms ease,
-      height 180ms ease,
       border-color 160ms ease,
       box-shadow 160ms ease;
   }
 
   :global(.photo-card:hover) {
-    border-color: rgb(0 0 0 / 6%);
-    box-shadow: 0 4px 12px rgb(0 0 0 / 3%);
+    border-color: color-mix(in srgb, var(--theme-current-accent) 70%, var(--theme-border));
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--theme-current-accent) 30%, transparent),
+      0 14px 32px color-mix(in srgb, var(--theme-current-accent) 20%, rgb(0 0 0 / 10%));
   }
 
-  :global(.photo-card:active .photo-image),
-  :global(.photo-card:hover .photo-image) {
-    transform: scale(1.035);
+  :global(.photo-card:hover .image),
+  :global(.photo-card:hover .placeholder) {
+    transform: scale(1.012);
   }
 
   :global(.photo-card:focus-visible) {
@@ -880,8 +884,16 @@ const theme = getThemeConfig();
   }
 
   :global(.photo-image) {
+    position: relative;
     width: 100%;
     height: 100%;
+    overflow: hidden;
+    background: var(--theme-current-accent-soft);
+  }
+
+  :global(.photo-image > .image),
+  :global(.photo-image > .placeholder) {
+    display: block;
     transition: transform 180ms ease;
   }
 
@@ -969,6 +981,43 @@ const theme = getThemeConfig();
     border-radius: 12px;
     object-fit: contain;
     box-shadow: 0 24px 80px rgb(0 0 0 / 34%);
+  }
+
+  .modal-loading {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 1;
+    display: none;
+    place-items: center;
+    width: 82px;
+    height: 82px;
+    border-radius: var(--radius-pill);
+    background: rgb(255 255 255 / 14%);
+    box-shadow: 0 18px 54px rgb(0 0 0 / 24%);
+    transform: translate(-50%, -50%);
+    backdrop-filter: blur(10px);
+  }
+
+  .photo-modal.is-loading .modal-loading {
+    display: grid;
+  }
+
+  .photo-modal.is-loading .modal-frame img {
+    opacity: 0.22;
+  }
+
+  .modal-loading-ring {
+    position: absolute;
+    display: block;
+    border-radius: var(--radius-pill);
+  }
+
+  .modal-loading-ring {
+    inset: 14px;
+    border: 3px solid rgb(255 255 255 / 28%);
+    border-top-color: var(--theme-current-accent);
+    animation: modal-loading-spin 0.9s linear infinite;
   }
 
   .modal-close {
@@ -1124,6 +1173,12 @@ const theme = getThemeConfig();
     40% {
       transform: translateY(-3px);
       opacity: 1;
+    }
+  }
+
+  @keyframes modal-loading-spin {
+    to {
+      transform: rotate(360deg);
     }
   }
 
@@ -1283,6 +1338,18 @@ const theme = getThemeConfig();
       height: auto !important;
       transform: none !important;
       aspect-ratio: 1 / 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.image),
+    :global(.loading-image),
+    :global(.loading-image)::after,
+    :global(.loading-mark),
+    :global(.button-loading-dots span),
+    :global(.photo-card .photo-image),
+    .modal-loading-ring {
+      animation: none;
     }
   }
 
