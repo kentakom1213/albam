@@ -16,6 +16,7 @@ func (s *Server) handleListAlbums(w http.ResponseWriter, r *http.Request) {
 
 	limit := parseIntQuery(r, "limit", 50)
 	offset := parseIntQuery(r, "offset", 0)
+	sort := parseAlbumSortQuery(r)
 
 	if limit <= 0 {
 		limit = 50
@@ -27,7 +28,7 @@ func (s *Server) handleListAlbums(w http.ResponseWriter, r *http.Request) {
 		offset = 0
 	}
 
-	rows, total, err := s.store.ListAlbums(limit, offset)
+	rows, total, err := s.store.ListAlbums(limit, offset, sort)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal_error", "failed to list albums")
 		return
@@ -103,7 +104,10 @@ func (s *Server) handleGetAlbum(w http.ResponseWriter, r *http.Request, albumID 
 func albumFromRow(row storage.AlbumRow) Album {
 	var coverPhotoID *string
 	var coverURL *string
+	var date *string
 	var latestMonth *string
+	var oldestTakenAt *string
+	var newestTakenAt *string
 
 	if row.CoverPhotoID.Valid {
 		id := row.CoverPhotoID.String
@@ -118,23 +122,49 @@ func albumFromRow(row storage.AlbumRow) Album {
 		latestMonth = &month
 	}
 
+	if row.Date.Valid {
+		value := row.Date.String
+		date = &value
+	}
+
+	if row.OldestTakenAt.Valid {
+		value := row.OldestTakenAt.String
+		oldestTakenAt = &value
+	}
+
+	if row.NewestTakenAt.Valid {
+		value := row.NewestTakenAt.String
+		newestTakenAt = &value
+	}
+
 	return Album{
-		ID:           row.Slug,
-		Title:        row.Title,
-		Description:  "",
-		Date:         nil,
-		CreatedAt:    row.CreatedAt,
-		UpdatedAt:    row.UpdatedAt,
-		PhotoCount:   row.PhotoCount,
-		LatestMonth:  latestMonth,
-		CoverPhotoID: coverPhotoID,
-		Visibility:   "private",
-		Breadcrumbs:  []Breadcrumb{},
+		ID:            row.Slug,
+		Title:         row.Title,
+		Description:   "",
+		Date:          date,
+		CreatedAt:     row.CreatedAt,
+		UpdatedAt:     row.UpdatedAt,
+		PhotoCount:    row.PhotoCount,
+		LatestMonth:   latestMonth,
+		OldestTakenAt: oldestTakenAt,
+		NewestTakenAt: newestTakenAt,
+		CoverPhotoID:  coverPhotoID,
+		Visibility:    "private",
+		Breadcrumbs:   []Breadcrumb{},
 		Links: AlbumLinks{
 			Self:   "/api/albums/" + row.Slug,
 			Photos: "/api/albums/" + row.Slug + "/photos",
 			Cover:  coverURL,
 		},
+	}
+}
+
+func parseAlbumSortQuery(r *http.Request) storage.AlbumSort {
+	switch r.URL.Query().Get("sort") {
+	case string(storage.AlbumSortDateAsc):
+		return storage.AlbumSortDateAsc
+	default:
+		return storage.AlbumSortDateDesc
 	}
 }
 

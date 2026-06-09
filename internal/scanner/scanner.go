@@ -24,13 +24,21 @@ type AssetFile struct {
 	Size     int64
 	ModTime  time.Time
 
-	Width        int
-	Height       int
-	TakenAt      *time.Time
-	GPSLatitude  *float64
-	GPSLongitude *float64
-	CameraMake   *string
-	CameraModel  *string
+	Width               int
+	Height              int
+	TakenAt             *time.Time
+	GPSLatitude         *float64
+	GPSLongitude        *float64
+	CameraMake          *string
+	CameraModel         *string
+	LensMake            *string
+	LensModel           *string
+	FocalLengthMM       *float64
+	FocalLength35mm     *int
+	ApertureFNumber     *float64
+	ExposureTimeSeconds *float64
+	ISO                 *int
+	Orientation         *int
 }
 
 func Scan(root string) ([]AssetFile, error) {
@@ -69,19 +77,27 @@ func Scan(root string) ([]AssetFile, error) {
 			exifMeta := metadata.ReadExif(path)
 
 			files = append(files, AssetFile{
-				Path:         path,
-				RelPath:      filepath.ToSlash(relPath),
-				Filename:     filepath.Base(path),
-				Ext:          strings.ToLower(filepath.Ext(path)),
-				Size:         info.Size(),
-				ModTime:      info.ModTime(),
-				Width:        width,
-				Height:       height,
-				TakenAt:      exifMeta.TakenAt,
-				GPSLatitude:  exifMeta.Latitude,
-				GPSLongitude: exifMeta.Longitude,
-				CameraMake:   exifMeta.CameraMake,
-				CameraModel:  exifMeta.CameraModel,
+				Path:                path,
+				RelPath:             filepath.ToSlash(relPath),
+				Filename:            filepath.Base(path),
+				Ext:                 strings.ToLower(filepath.Ext(path)),
+				Size:                info.Size(),
+				ModTime:             info.ModTime(),
+				Width:               width,
+				Height:              height,
+				TakenAt:             exifMeta.TakenAt,
+				GPSLatitude:         exifMeta.Latitude,
+				GPSLongitude:        exifMeta.Longitude,
+				CameraMake:          exifMeta.CameraMake,
+				CameraModel:         exifMeta.CameraModel,
+				LensMake:            exifMeta.LensMake,
+				LensModel:           exifMeta.LensModel,
+				FocalLengthMM:       exifMeta.FocalLengthMM,
+				FocalLength35mm:     exifMeta.FocalLength35mm,
+				ApertureFNumber:     exifMeta.ApertureFNumber,
+				ExposureTimeSeconds: exifMeta.ExposureTimeSeconds,
+				ISO:                 exifMeta.ISO,
+				Orientation:         exifMeta.Orientation,
 			})
 
 			return nil

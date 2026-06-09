@@ -20,6 +20,11 @@ const theme = getThemeConfig();
       </div>
     </section>
 
+    <div class="album-toolbar" aria-label="Album sorting">
+      <button class="chip active small" type="button" data-album-sort="date_desc">Newest</button>
+      <button class="chip small" type="button" data-album-sort="date_asc">Oldest</button>
+    </div>
+
     <section class="album-grid" id="album-grid" aria-label="Albums">
       <div class="album-card loading-card" aria-label="Loading albums">
         <div class="album-image loading-image">
@@ -64,13 +69,14 @@ const theme = getThemeConfig();
 
 <script>
   import { getAlbumsWithPagination } from "../lib/api";
-  import type { Album } from "../lib/api";
+  import type { Album, AlbumSort } from "../lib/api";
 
   const tones = ["peach", "linen", "mint", "sky", "lilac", "lemon"] as const;
   const albumGrid = document.querySelector<HTMLElement>("#album-grid");
   const loadMoreAlbumsButton = document.querySelector<HTMLButtonElement>("#load-more-albums");
   let loadedAlbumCount = 0;
   let hasMoreAlbums = false;
+  let currentAlbumSort: AlbumSort = "date_desc";
 
   function escapeHTML(value: string) {
     return value.replace(/[&<>"']/g, (char) => {
@@ -124,13 +130,58 @@ const theme = getThemeConfig();
     `;
   }
 
+  function loadingAlbumCardsHTML() {
+    return `
+      <div class="album-card loading-card" aria-label="Loading albums">
+        <div class="album-image loading-image">
+          <span class="loading-circle large"></span>
+          <span class="loading-circle small"></span>
+          <span class="loading-mark"></span>
+        </div>
+        <div class="album-meta loading-meta">
+          <span class="loading-line title"></span>
+          <span class="loading-line body"></span>
+        </div>
+      </div>
+      <div class="album-card loading-card" aria-hidden="true">
+        <div class="album-image loading-image">
+          <span class="loading-circle large"></span>
+          <span class="loading-circle small"></span>
+          <span class="loading-mark"></span>
+        </div>
+        <div class="album-meta loading-meta">
+          <span class="loading-line title"></span>
+          <span class="loading-line body"></span>
+        </div>
+      </div>
+      <div class="album-card loading-card" aria-hidden="true">
+        <div class="album-image loading-image">
+          <span class="loading-circle large"></span>
+          <span class="loading-circle small"></span>
+          <span class="loading-mark"></span>
+        </div>
+        <div class="album-meta loading-meta">
+          <span class="loading-line title"></span>
+          <span class="loading-line body"></span>
+        </div>
+      </div>
+    `;
+  }
+
+  function setActiveAlbumSort(sort: AlbumSort) {
+    currentAlbumSort = sort;
+    document.querySelectorAll<HTMLElement>("[data-album-sort]").forEach((button) => {
+      button.classList.toggle("active", button.dataset.albumSort === sort);
+    });
+  }
+
   async function renderHome() {
     if (!albumGrid) {
       return;
     }
 
     try {
-      const { albums, pagination } = await getAlbumsWithPagination();
+      const { albums, pagination } = await getAlbumsWithPagination({ sort: currentAlbumSort });
       loadedAlbumCount = albums.length;
       hasMoreAlbums = pagination.has_next;
 
@@ -174,8 +225,11 @@ const theme = getThemeConfig();
     loadMoreAlbumsButton.innerHTML = loadingButtonHTML("Loading");
 
     try {
-      const { albums, pagination } = await getAlbumsWithPagination({ offset: loadedAlbumCount });
-      albumGrid.insertAdjacentHTML("beforeend", albums.map(albumCard).join(""));
+      const { albums, pagination } = await getAlbumsWithPagination({
+        offset: loadedAlbumCount,
+        sort: currentAlbumSort,
+      });
+      albumGrid.insertAdjacentHTML("beforeend", albums.map((album, index) => albumCard(album, loadedAlbumCount + index)).join(""));
       loadedAlbumCount += albums.length;
       hasMoreAlbums = pagination.has_next;
       updateLoadMoreAlbumsButton();
@@ -185,6 +239,48 @@ const theme = getThemeConfig();
       loadMoreAlbumsButton.textContent = "Load more";
     }
   }
+
+  async function reloadAlbums(sort: AlbumSort) {
+    if (!albumGrid) {
+      return;
+    }
+
+    setActiveAlbumSort(sort);
+    loadedAlbumCount = 0;
+    hasMoreAlbums = false;
+    albumGrid.innerHTML = loadingAlbumCardsHTML();
+    updateLoadMoreAlbumsButton();
+
+    try {
+      const { albums, pagination } = await getAlbumsWithPagination({ sort });
+      loadedAlbumCount = albums.length;
+      hasMoreAlbums = pagination.has_next;
+      albumGrid.innerHTML = albums.length
+        ? albums.map(albumCard).join("")
+        : `<p class="load-state">No albums indexed yet.</p>`;
+      updateLoadMoreAlbumsButton();
+    } catch (error) {
+      console.error(error);
+      albumGrid.innerHTML = `<p class="load-state">Failed to load albums.</p>`;
+    }
+  }
+
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      return;
+    }
+
+    const sortButton = target.closest<HTMLElement>("[data-album-sort]");
+    if (!sortButton) {
+      return;
+    }
+
+    const sort = sortButton.dataset.albumSort;
+    if (sort === "date_desc" || sort === "date_asc") {
+      void reloadAlbums(sort);
+    }
+  });
 
   loadMoreAlbumsButton?.addEventListener("click", loadMoreAlbums);
 
@@ -198,6 +294,14 @@ const theme = getThemeConfig();
 
   .home-hero {
     margin-bottom: 32px;
+  }
+
+  .album-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 18px;
   }
 
   .hero-copy {
@@ -231,6 +335,34 @@ const theme = getThemeConfig();
   .mobile-eyebrow,
   .mobile-lead {
     display: none;
+  }
+
+  :global(.chip) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 0 17px;
+    border: 1px solid var(--theme-border);
+    border-radius: var(--radius-pill);
+    background: var(--theme-surface);
+    color: var(--theme-muted);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  :global(.chip.active) {
+    border-color: var(--theme-current-accent);
+    background: var(--theme-current-accent-soft);
+    color: var(--theme-text);
+  }
+
+  :global(.chip.small) {
+    min-height: 31px;
+    padding: 0 15px;
+    font-size: 13px;
   }
 
   .album-grid {

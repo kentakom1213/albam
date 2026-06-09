@@ -16,6 +16,8 @@ export type ApiAlbum = {
   updated_at: string;
   photo_count: number;
   latest_month: string | null;
+  oldest_taken_at: string | null;
+  newest_taken_at: string | null;
   cover_photo_id: string | null;
   visibility: "public" | "private";
   breadcrumbs: ApiBreadcrumb[];
@@ -36,6 +38,18 @@ export type ApiPhoto = {
   width: number | null;
   height: number | null;
   aspect_ratio: number | null;
+  gps_latitude: number | null;
+  gps_longitude: number | null;
+  camera_make: string | null;
+  camera_model: string | null;
+  lens_make: string | null;
+  lens_model: string | null;
+  focal_length_mm: number | null;
+  focal_length_35mm: number | null;
+  aperture_f_number: number | null;
+  exposure_time_seconds: number | null;
+  iso: number | null;
+  orientation: number | null;
   favorite: boolean;
   links: {
     self: string;
@@ -65,7 +79,10 @@ export type Album = {
   kind: string;
   description: string;
   photoCount: number;
+  date?: string;
   latestMonth?: string;
+  oldestTakenAt?: string;
+  newestTakenAt?: string;
   createdAt: string;
   updatedAt: string;
   size: string;
@@ -88,6 +105,9 @@ export type Photo = {
   favorite?: boolean;
   tone?: Album["tone"];
 };
+
+export type AlbumSort = "date_desc" | "date_asc";
+export type PhotoSort = "taken_at_desc" | "taken_at_asc";
 
 export type AlbumPhotosResult = {
   photos: Photo[];
@@ -243,7 +263,10 @@ export function toAlbum(album: ApiAlbum, index = 0): Album {
     kind: "PHOTO ALBUM",
     description: album.description,
     photoCount: album.photo_count,
+    date: album.date ?? undefined,
     latestMonth: album.latest_month ?? undefined,
+    oldestTakenAt: album.oldest_taken_at ?? undefined,
+    newestTakenAt: album.newest_taken_at ?? undefined,
     createdAt: formatDate(album.created_at),
     updatedAt: formatDate(album.updated_at),
     size: "-",
@@ -275,11 +298,12 @@ export function toPhoto(photo: ApiPhoto, index = 0): Photo {
   };
 }
 
-export async function getAlbumsWithPagination(params: { limit?: number; offset?: number } = {}): Promise<AlbumsResult> {
+export async function getAlbumsWithPagination(params: { limit?: number; offset?: number; sort?: AlbumSort } = {}): Promise<AlbumsResult> {
   const offset = params.offset ?? 0;
   const body = await request<AlbumsResponse>("albums", {
     limit: params.limit ?? 50,
     offset,
+    sort: params.sort ?? "date_desc",
   });
 
   return {
@@ -300,12 +324,13 @@ export async function getAlbum(albumId: string): Promise<Album> {
 
 export async function getAlbumPhotosWithPagination(
   albumId: string,
-  params: { limit?: number; offset?: number } = {},
+  params: { limit?: number; offset?: number; sort?: PhotoSort } = {},
 ): Promise<AlbumPhotosResult> {
   const offset = params.offset ?? 0;
   const body = await request<PhotosResponse>(`albums/${albumId}/photos`, {
     limit: params.limit ?? 100,
     offset,
+    sort: params.sort ?? "taken_at_desc",
   });
 
   return {

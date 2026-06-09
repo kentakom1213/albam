@@ -7,15 +7,18 @@ import (
 )
 
 type AlbumRow struct {
-	ID           int64
-	Path         string
-	Slug         string
-	Title        string
-	CreatedAt    string
-	UpdatedAt    string
-	PhotoCount   int
-	CoverPhotoID sql.NullString
-	LatestMonth  sql.NullString
+	ID            int64
+	Path          string
+	Slug          string
+	Title         string
+	Date          sql.NullString
+	CreatedAt     string
+	UpdatedAt     string
+	PhotoCount    int
+	CoverPhotoID  sql.NullString
+	LatestMonth   sql.NullString
+	OldestTakenAt sql.NullString
+	NewestTakenAt sql.NullString
 }
 
 type AssetRow struct {
@@ -30,16 +33,43 @@ type AssetRow struct {
 	ModTime   string
 	Width     sql.NullInt64
 	Height    sql.NullInt64
+	TakenAt   sql.NullString
+
+	GPSLatitude         sql.NullFloat64
+	GPSLongitude        sql.NullFloat64
+	CameraMake          sql.NullString
+	CameraModel         sql.NullString
+	LensMake            sql.NullString
+	LensModel           sql.NullString
+	FocalLengthMM       sql.NullFloat64
+	FocalLength35mm     sql.NullInt64
+	ApertureFNumber     sql.NullFloat64
+	ExposureTimeSeconds sql.NullFloat64
+	ISO                 sql.NullInt64
+	Orientation         sql.NullInt64
+
 	CreatedAt string
 	UpdatedAt string
 }
 
-func (s *Storage) ListAlbums(limit, offset int) ([]AlbumRow, int, error) {
+type AssetSort string
+type AlbumSort string
+
+const (
+	AssetSortTakenAtDesc AssetSort = "taken_at_desc"
+	AssetSortTakenAtAsc  AssetSort = "taken_at_asc"
+
+	AlbumSortDateDesc AlbumSort = "date_desc"
+	AlbumSortDateAsc  AlbumSort = "date_asc"
+)
+
+func (s *Storage) ListAlbums(limit, offset int, sort AlbumSort) ([]AlbumRow, int, error) {
 	total, err := s.countAlbums()
 	if err != nil {
 		return nil, 0, err
 	}
 
+	orderBy := albumOrderBy(sort)
 	rows, err := s.db.Query(`
 SELECT
 	albums.id,
@@ -60,7 +90,7 @@ FROM albums
 LEFT JOIN assets ON assets.album_id = albums.id
 GROUP BY albums.id
 HAVING COUNT(assets.id) > 0
-ORDER BY albums.path
+`+orderBy+`
 LIMIT ? OFFSET ?
 `, limit, offset)
 	if err != nil {
@@ -92,11 +122,11 @@ LIMIT ? OFFSET ?
 	}
 
 	for i := range albums {
-		latestMonth, err := s.GetLatestAssetMonthByAlbumSlug(albums[i].Slug)
+		dateRange, err := s.GetAssetDateRangeByAlbumSlug(albums[i].Slug)
 		if err != nil {
 			return nil, 0, err
 		}
-		albums[i].LatestMonth = latestMonth
+		applyAlbumDateRange(&albums[i], dateRange)
 	}
 
 	return albums, total, nil
@@ -143,18 +173,27 @@ GROUP BY albums.id
 		return nil, err
 	}
 
-	latestMonth, err := s.GetLatestAssetMonthByAlbumSlug(album.Slug)
+	dateRange, err := s.GetAssetDateRangeByAlbumSlug(album.Slug)
 	if err != nil {
 		return nil, err
 	}
-	album.LatestMonth = latestMonth
+	applyAlbumDateRange(&album, dateRange)
 
 	return &album, nil
 }
 
-func (s *Storage) GetLatestAssetMonthByAlbumSlug(slug string) (sql.NullString, error) {
-	rows, err := s.db.Query(`
-SELECT assets.path
+type AssetDateRange struct {
+	Oldest sql.NullString
+	Newest sql.NullString
+}
+
+func (s *Storage) GetAssetDateRangeByAlbumSlug(slug string) (AssetDateRange, error) {
+	var dateRange AssetDateRange
+
+	err := s.db.QueryRow(`
+SELECT
+	MIN(taken_at),
+	MAX(taken_at)
 FROM albums AS root
 JOIN albums AS child
 	ON child.path = root.path
@@ -164,33 +203,72 @@ JOIN albums AS child
 	)
 JOIN assets ON assets.album_id = child.id
 WHERE root.slug = ?
-`, slug)
+	AND assets.taken_at IS NOT NULL
+`, slug).Scan(&dateRange.Oldest, &dateRange.Newest)
 	if err != nil {
-		return sql.NullString{}, err
-	}
-	defer rows.Close()
-
-	latest := ""
-	for rows.Next() {
-		var assetPath string
-		if err := rows.Scan(&assetPath); err != nil {
-			return sql.NullString{}, err
-		}
-
-		month := assetMonthFromPath(assetPath)
-		if month > latest {
-			latest = month
-		}
+		return AssetDateRange{}, err
 	}
 
-	if err := rows.Err(); err != nil {
-		return sql.NullString{}, err
+	return dateRange, nil
+}
+
+func applyAlbumDateRange(album *AlbumRow, dateRange AssetDateRange) {
+	album.OldestTakenAt = dateRange.Oldest
+	album.NewestTakenAt = dateRange.Newest
+
+	if dateRange.Newest.Valid {
+		album.Date = dateFromTimestamp(dateRange.Newest.String)
+		album.LatestMonth = monthFromTimestamp(dateRange.Newest.String)
 	}
-	if latest == "" {
-		return sql.NullString{}, nil
+}
+
+func dateFromTimestamp(value string) sql.NullString {
+	if len(value) < 10 {
+		return sql.NullString{}
 	}
 
-	return sql.NullString{String: latest, Valid: true}, nil
+	return sql.NullString{String: value[:10], Valid: true}
+}
+
+func monthFromTimestamp(value string) sql.NullString {
+	if len(value) < 7 {
+		return sql.NullString{}
+	}
+
+	return sql.NullString{String: strings.ReplaceAll(value[:7], "-", "/"), Valid: true}
+}
+
+func albumOrderBy(sort AlbumSort) string {
+	switch sort {
+	case AlbumSortDateAsc:
+		return `ORDER BY COALESCE((
+	SELECT MIN(a.taken_at)
+	FROM albums AS child
+	JOIN assets AS a ON a.album_id = child.id
+	WHERE (
+		child.path = albums.path
+		OR (
+			child.path COLLATE BINARY >= albums.path || '/'
+			AND child.path COLLATE BINARY < albums.path || '0'
+		)
+	)
+	AND a.taken_at IS NOT NULL
+), albums.updated_at) ASC, albums.path ASC`
+	default:
+		return `ORDER BY COALESCE((
+	SELECT MAX(a.taken_at)
+	FROM albums AS child
+	JOIN assets AS a ON a.album_id = child.id
+	WHERE (
+		child.path = albums.path
+		OR (
+			child.path COLLATE BINARY >= albums.path || '/'
+			AND child.path COLLATE BINARY < albums.path || '0'
+		)
+	)
+	AND a.taken_at IS NOT NULL
+), albums.updated_at) DESC, albums.path DESC`
+	}
 }
 
 func assetMonthFromPath(assetPath string) string {
@@ -257,6 +335,19 @@ SELECT
     file_mtime,
     width,
     height,
+	taken_at,
+	gps_latitude,
+	gps_longitude,
+	camera_make,
+	camera_model,
+	lens_make,
+	lens_model,
+	focal_length_mm,
+	focal_length_35mm,
+	aperture_f_number,
+	exposure_time_seconds,
+	iso,
+	orientation,
     created_at,
     updated_at
 FROM assets
@@ -272,6 +363,19 @@ WHERE id = ?
 		&asset.ModTime,
 		&asset.Width,
 		&asset.Height,
+		&asset.TakenAt,
+		&asset.GPSLatitude,
+		&asset.GPSLongitude,
+		&asset.CameraMake,
+		&asset.CameraModel,
+		&asset.LensMake,
+		&asset.LensModel,
+		&asset.FocalLengthMM,
+		&asset.FocalLength35mm,
+		&asset.ApertureFNumber,
+		&asset.ExposureTimeSeconds,
+		&asset.ISO,
+		&asset.Orientation,
 		&asset.CreatedAt,
 		&asset.UpdatedAt,
 	)
@@ -302,6 +406,19 @@ SELECT
     assets.file_mtime,
     assets.width,
     assets.height,
+	assets.taken_at,
+	assets.gps_latitude,
+	assets.gps_longitude,
+	assets.camera_make,
+	assets.camera_model,
+	assets.lens_make,
+	assets.lens_model,
+	assets.focal_length_mm,
+	assets.focal_length_35mm,
+	assets.aperture_f_number,
+	assets.exposure_time_seconds,
+	assets.iso,
+	assets.orientation,
     assets.created_at,
     assets.updated_at
 FROM assets
@@ -319,6 +436,19 @@ WHERE assets.slug = ?
 		&asset.ModTime,
 		&asset.Width,
 		&asset.Height,
+		&asset.TakenAt,
+		&asset.GPSLatitude,
+		&asset.GPSLongitude,
+		&asset.CameraMake,
+		&asset.CameraModel,
+		&asset.LensMake,
+		&asset.LensModel,
+		&asset.FocalLengthMM,
+		&asset.FocalLength35mm,
+		&asset.ApertureFNumber,
+		&asset.ExposureTimeSeconds,
+		&asset.ISO,
+		&asset.Orientation,
 		&asset.CreatedAt,
 		&asset.UpdatedAt,
 	)
@@ -333,12 +463,13 @@ WHERE assets.slug = ?
 	return &asset, nil
 }
 
-func (s *Storage) ListAssetsByAlbumSlug(slug string, limit, offset int) ([]AssetRow, int, error) {
+func (s *Storage) ListAssetsByAlbumSlug(slug string, limit, offset int, sort AssetSort) ([]AssetRow, int, error) {
 	total, err := s.countAssetsByAlbumSlug(slug)
 	if err != nil {
 		return nil, 0, err
 	}
 
+	orderBy := assetOrderBy(sort)
 	rows, err := s.db.Query(`
 SELECT
     assets.id,
@@ -351,6 +482,19 @@ SELECT
     assets.file_mtime,
     assets.width,
     assets.height,
+	assets.taken_at,
+	assets.gps_latitude,
+	assets.gps_longitude,
+	assets.camera_make,
+	assets.camera_model,
+	assets.lens_make,
+	assets.lens_model,
+	assets.focal_length_mm,
+	assets.focal_length_35mm,
+	assets.aperture_f_number,
+	assets.exposure_time_seconds,
+	assets.iso,
+	assets.orientation,
     assets.created_at,
     assets.updated_at
 FROM albums AS root
@@ -362,7 +506,7 @@ JOIN albums AS child
 	)
 JOIN assets ON assets.album_id = child.id
 WHERE root.slug = ?
-ORDER BY assets.path
+`+orderBy+`
 LIMIT ? OFFSET ?
 `, slug, limit, offset)
 	if err != nil {
@@ -384,6 +528,19 @@ LIMIT ? OFFSET ?
 			&asset.ModTime,
 			&asset.Width,
 			&asset.Height,
+			&asset.TakenAt,
+			&asset.GPSLatitude,
+			&asset.GPSLongitude,
+			&asset.CameraMake,
+			&asset.CameraModel,
+			&asset.LensMake,
+			&asset.LensModel,
+			&asset.FocalLengthMM,
+			&asset.FocalLength35mm,
+			&asset.ApertureFNumber,
+			&asset.ExposureTimeSeconds,
+			&asset.ISO,
+			&asset.Orientation,
 			&asset.CreatedAt,
 			&asset.UpdatedAt,
 		); err != nil {
@@ -398,6 +555,15 @@ LIMIT ? OFFSET ?
 	}
 
 	return assets, total, nil
+}
+
+func assetOrderBy(sort AssetSort) string {
+	switch sort {
+	case AssetSortTakenAtAsc:
+		return "ORDER BY COALESCE(assets.taken_at, assets.file_mtime) ASC, assets.path ASC"
+	default:
+		return "ORDER BY COALESCE(assets.taken_at, assets.file_mtime) DESC, assets.path DESC"
+	}
 }
 
 func (s *Storage) countAlbums() (int, error) {

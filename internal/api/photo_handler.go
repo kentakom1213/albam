@@ -11,6 +11,7 @@ import (
 func (s *Server) handleListAlbumPhotos(w http.ResponseWriter, r *http.Request, albumID string) {
 	limit := parseIntQuery(r, "limit", 100)
 	offset := parseIntQuery(r, "offset", 0)
+	sort := parsePhotoSortQuery(r)
 
 	if limit <= 0 {
 		limit = 100
@@ -32,7 +33,7 @@ func (s *Server) handleListAlbumPhotos(w http.ResponseWriter, r *http.Request, a
 		return
 	}
 
-	rows, total, err := s.store.ListAssetsByAlbumSlug(albumID, limit, offset)
+	rows, total, err := s.store.ListAssetsByAlbumSlug(albumID, limit, offset, sort)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal_error", "failed to list photos")
 		return
@@ -40,7 +41,7 @@ func (s *Server) handleListAlbumPhotos(w http.ResponseWriter, r *http.Request, a
 
 	photos := make([]Photo, 0, len(rows))
 	for _, row := range rows {
-		photos = append(photos, photoFromRow(row, albumID))
+		photos = append(photos, photoFromRow(row, albumID, s.cfg.PrivacyConfig.ExposeGPS))
 	}
 
 	writeJSON(w, http.StatusOK, PhotosResponse{
@@ -52,6 +53,15 @@ func (s *Server) handleListAlbumPhotos(w http.ResponseWriter, r *http.Request, a
 			HasNext: offset+limit < total,
 		},
 	})
+}
+
+func parsePhotoSortQuery(r *http.Request) storage.AssetSort {
+	switch r.URL.Query().Get("sort") {
+	case string(storage.AssetSortTakenAtAsc):
+		return storage.AssetSortTakenAtAsc
+	default:
+		return storage.AssetSortTakenAtDesc
+	}
 }
 
 func (s *Server) handlePhotoSubroutes(w http.ResponseWriter, r *http.Request) {
@@ -82,26 +92,44 @@ func (s *Server) handleGetPhoto(w http.ResponseWriter, r *http.Request, photoID 
 	}
 
 	writeJSON(w, http.StatusOK, PhotoResponse{
-		Photo: photoFromRow(*row, row.AlbumSlug),
+		Photo: photoFromRow(*row, row.AlbumSlug, s.cfg.PrivacyConfig.ExposeGPS),
 	})
 }
 
-func photoFromRow(row storage.AssetRow, albumID string) Photo {
+func photoFromRow(row storage.AssetRow, albumID string, exposeGPS bool) Photo {
 	photoID := row.Slug
 	width := intPtrFromNullInt(row.Width)
 	height := intPtrFromNullInt(row.Height)
+	gpsLatitude := floatPtrFromNullFloat(row.GPSLatitude)
+	gpsLongitude := floatPtrFromNullFloat(row.GPSLongitude)
+	if !exposeGPS {
+		gpsLatitude = nil
+		gpsLongitude = nil
+	}
 
 	return Photo{
-		ID:          photoID,
-		AlbumID:     albumID,
-		Filename:    row.Filename,
-		Title:       nil,
-		Description: nil,
-		TakenAt:     nil,
-		Width:       width,
-		Height:      height,
-		AspectRatio: aspectRatioPtr(width, height),
-		Favorite:    false,
+		ID:                  photoID,
+		AlbumID:             albumID,
+		Filename:            row.Filename,
+		Title:               nil,
+		Description:         nil,
+		TakenAt:             stringPtrFromNullString(row.TakenAt),
+		Width:               width,
+		Height:              height,
+		AspectRatio:         aspectRatioPtr(width, height),
+		GPSLatitude:         gpsLatitude,
+		GPSLongitude:        gpsLongitude,
+		CameraMake:          stringPtrFromNullString(row.CameraMake),
+		CameraModel:         stringPtrFromNullString(row.CameraModel),
+		LensMake:            stringPtrFromNullString(row.LensMake),
+		LensModel:           stringPtrFromNullString(row.LensModel),
+		FocalLengthMM:       floatPtrFromNullFloat(row.FocalLengthMM),
+		FocalLength35mm:     intPtrFromNullInt(row.FocalLength35mm),
+		ApertureFNumber:     floatPtrFromNullFloat(row.ApertureFNumber),
+		ExposureTimeSeconds: floatPtrFromNullFloat(row.ExposureTimeSeconds),
+		ISO:                 intPtrFromNullInt(row.ISO),
+		Orientation:         intPtrFromNullInt(row.Orientation),
+		Favorite:            false,
 		Links: PhotoLinks{
 			Self:     "/api/photos/" + photoID,
 			Thumb:    "/media/photos/" + photoID + "/thumb",
@@ -118,6 +146,22 @@ func intPtrFromNullInt(value sql.NullInt64) *int {
 
 	intValue := int(value.Int64)
 	return &intValue
+}
+
+func stringPtrFromNullString(value sql.NullString) *string {
+	if !value.Valid {
+		return nil
+	}
+
+	return &value.String
+}
+
+func floatPtrFromNullFloat(value sql.NullFloat64) *float64 {
+	if !value.Valid {
+		return nil
+	}
+
+	return &value.Float64
 }
 
 func aspectRatioPtr(width, height *int) *float64 {

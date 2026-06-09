@@ -19,8 +19,8 @@ const theme = getThemeConfig();
       </nav>
 
       <div class="toolbar-chips" aria-label="Photo filters">
-        <span class="chip active small">Newest</span>
-        <span class="chip small">Oldest</span>
+        <button class="chip active small" type="button" data-photo-sort="taken_at_desc">Newest</button>
+        <button class="chip small" type="button" data-photo-sort="taken_at_asc">Oldest</button>
         <span class="chip small">Favorite</span>
         <button class="help-button" type="button" aria-label="Album info" aria-expanded="false">?</button>
       </div>
@@ -126,7 +126,7 @@ const theme = getThemeConfig();
 
 <script>
   import { formatCompactDate, formatCompactMonth, getAlbum, getAlbumPhotosWithPagination, getApiConfig, getPhoto } from "../../lib/api";
-  import type { Album, Breadcrumb, Photo } from "../../lib/api";
+  import type { Album, Breadcrumb, Photo, PhotoSort } from "../../lib/api";
   import { buildFixedRowLayout } from "../../lib/fixedRowLayout";
 
   const tones = ["peach", "linen", "mint", "sky", "lilac", "lemon"] as const;
@@ -143,6 +143,7 @@ const theme = getThemeConfig();
   let renderedPhotos: Photo[] = [];
   let loadedPhotoCount = 0;
   let hasMorePhotos = false;
+  let currentPhotoSort: PhotoSort = "taken_at_desc";
 
   function escapeHTML(value: string) {
     return value.replace(/[&<>"']/g, (char) => {
@@ -337,6 +338,13 @@ const theme = getThemeConfig();
     setText("#info-updated", album.updatedAt);
   }
 
+  function setActivePhotoSort(sort: PhotoSort) {
+    currentPhotoSort = sort;
+    document.querySelectorAll<HTMLElement>("[data-photo-sort]").forEach((button) => {
+      button.classList.toggle("active", button.dataset.photoSort === sort);
+    });
+  }
+
   async function renderAlbum() {
     const albumId = currentAlbumId();
 
@@ -350,15 +358,15 @@ const theme = getThemeConfig();
     try {
       const [album, photosResult, apiConfig] = await Promise.all([
         getAlbum(albumId),
-        getAlbumPhotosWithPagination(albumId),
+        getAlbumPhotosWithPagination(albumId, { sort: currentPhotoSort }),
         getApiConfig(),
       ]);
       const { photos, pagination } = photosResult;
       enableOriginalDownload = apiConfig.enableOriginalDownload;
       loadedPhotoCount = photos.length;
       hasMorePhotos = pagination.has_next;
-      const visibleDate = formatCompactDate(album.createdAt);
-      const shortDate = formatCompactMonth(album.createdAt);
+      const visibleDate = formatCompactDate(album.date ?? album.newestTakenAt ?? album.createdAt);
+      const shortDate = formatCompactMonth(album.date ?? album.newestTakenAt ?? album.createdAt);
 
       document.title = `${siteTitle} | ${album.title}`;
       renderBreadcrumbs(album);
@@ -497,6 +505,7 @@ const theme = getThemeConfig();
     try {
       const { photos, pagination } = await getAlbumPhotosWithPagination(albumId, {
         offset: loadedPhotoCount,
+        sort: currentPhotoSort,
       });
       renderedPhotos = [...renderedPhotos, ...photos];
       photoGrid.insertAdjacentHTML("beforeend", photos.map((photo, index) => photoCard(photo, loadedPhotoCount + index)).join(""));
@@ -508,6 +517,49 @@ const theme = getThemeConfig();
       console.error(error);
       loadMorePhotosButton.disabled = false;
       loadMorePhotosButton.textContent = "Load more";
+    }
+  }
+
+  async function reloadPhotos(sort: PhotoSort) {
+    const albumId = currentAlbumId();
+    if (!albumId || !photoGrid) {
+      return;
+    }
+
+    setActivePhotoSort(sort);
+    loadedPhotoCount = 0;
+    hasMorePhotos = false;
+    photoGrid.classList.remove("is-empty");
+    photoGrid.removeAttribute("style");
+    photoGrid.innerHTML = `
+      <div class="photo-card loading-photo-card" aria-label="Loading photos">
+        <div class="photo-image loading-image">
+          <span class="loading-circle large"></span>
+          <span class="loading-circle small"></span>
+          <span class="loading-mark"></span>
+        </div>
+      </div>
+    `;
+    updateLoadMorePhotosButton();
+
+    try {
+      const { photos, pagination } = await getAlbumPhotosWithPagination(albumId, { sort });
+      renderedPhotos = photos;
+      loadedPhotoCount = photos.length;
+      hasMorePhotos = pagination.has_next;
+      photoGrid.classList.toggle("is-empty", photos.length === 0);
+      photoGrid.removeAttribute("style");
+      photoGrid.innerHTML = photos.length
+        ? photos.map(photoCard).join("")
+        : `<p class="load-state">No photos indexed yet.</p>`;
+      applyPhotoLayout();
+      updateLoadMorePhotosButton();
+    } catch (error) {
+      console.error(error);
+      renderedPhotos = [];
+      photoGrid.classList.add("is-empty");
+      photoGrid.removeAttribute("style");
+      photoGrid.innerHTML = `<p class="load-state">Failed to load photos.</p>`;
     }
   }
 
@@ -540,6 +592,15 @@ const theme = getThemeConfig();
     const closeButton = target.closest("[data-modal-close]");
     if (closeButton) {
       closePhotoModal();
+      return;
+    }
+
+    const sortButton = target.closest<HTMLElement>("[data-photo-sort]");
+    if (sortButton) {
+      const sort = sortButton.dataset.photoSort;
+      if (sort === "taken_at_desc" || sort === "taken_at_asc") {
+        void reloadPhotos(sort);
+      }
       return;
     }
 

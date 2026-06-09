@@ -20,11 +20,19 @@ type Asset struct {
 	Size     int64
 	ModTime  time.Time
 
-	Width        int
-	Height       int
-	TakenAt      *time.Time
-	GPSLatitude  *float64
-	GPSLongitude *float64
-	CameraMake   *string
-	CameraModel  *string
+	Width               int
+	Height              int
+	TakenAt             *time.Time
+	GPSLatitude         *float64
+	GPSLongitude        *float64
+	CameraMake          *string
+	CameraModel         *string
+	LensMake            *string
+	LensModel           *string
+	FocalLengthMM       *float64
+	FocalLength35mm     *int
+	ApertureFNumber     *float64
+	ExposureTimeSeconds *float64
+	ISO                 *int
+	Orientation         *int
 }

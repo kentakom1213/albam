@@ -124,9 +124,17 @@ INSERT INTO assets (
 	gps_longitude,
 	camera_make,
 	camera_model,
+	lens_make,
+	lens_model,
+	focal_length_mm,
+	focal_length_35mm,
+	aperture_f_number,
+	exposure_time_seconds,
+	iso,
+	orientation,
 	updated_at
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 ON CONFLICT(path) DO UPDATE SET
 	album_id = excluded.album_id,
 	filename = excluded.filename,
@@ -140,6 +148,14 @@ ON CONFLICT(path) DO UPDATE SET
 	gps_longitude = excluded.gps_longitude,
 	camera_make = excluded.camera_make,
 	camera_model = excluded.camera_model,
+	lens_make = excluded.lens_make,
+	lens_model = excluded.lens_model,
+	focal_length_mm = excluded.focal_length_mm,
+	focal_length_35mm = excluded.focal_length_35mm,
+	aperture_f_number = excluded.aperture_f_number,
+	exposure_time_seconds = excluded.exposure_time_seconds,
+	iso = excluded.iso,
+	orientation = excluded.orientation,
 	updated_at = CURRENT_TIMESTAMP
 `,
 		albumID,
@@ -156,6 +172,14 @@ ON CONFLICT(path) DO UPDATE SET
 		nullFloat(asset.GPSLongitude),
 		nullString(asset.CameraMake),
 		nullString(asset.CameraModel),
+		nullString(asset.LensMake),
+		nullString(asset.LensModel),
+		nullFloat(asset.FocalLengthMM),
+		nullPtrInt(asset.FocalLength35mm),
+		nullFloat(asset.ApertureFNumber),
+		nullFloat(asset.ExposureTimeSeconds),
+		nullPtrInt(asset.ISO),
+		nullPtrInt(asset.Orientation),
 	)
 
 	return err
@@ -217,6 +241,14 @@ func nullInt(value int) any {
 	}
 
 	return value
+}
+
+func nullPtrInt(value *int) any {
+	if value == nil || *value <= 0 {
+		return nil
+	}
+
+	return *value
 }
 
 func nullFloat(value *float64) any {

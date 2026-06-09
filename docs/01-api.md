@@ -104,6 +104,9 @@ type Album = {
   created_at: string;
   updated_at: string;
   photo_count: number;
+  latest_month: string | null;
+  oldest_taken_at: string | null;
+  newest_taken_at: string | null;
   cover_photo_id: string | null;
   visibility: "public" | "private";
   tags: Tag[];
@@ -126,6 +129,9 @@ type Album = {
   "created_at": "2026-05-18T10:30:00+09:00",
   "updated_at": "2026-05-23T18:10:00+09:00",
   "photo_count": 48,
+  "latest_month": "2026/05",
+  "oldest_taken_at": "2026-05-18T15:20:00+09:00",
+  "newest_taken_at": "2026-05-23T18:10:00+09:00",
   "cover_photo_id": "img-001",
   "visibility": "public",
   "tags": [
@@ -278,6 +284,18 @@ type Photo = {
   width: number | null;
   height: number | null;
   aspect_ratio: number | null;
+  gps_latitude: number | null;
+  gps_longitude: number | null;
+  camera_make: string | null;
+  camera_model: string | null;
+  lens_make: string | null;
+  lens_model: string | null;
+  focal_length_mm: number | null;
+  focal_length_35mm: number | null;
+  aperture_f_number: number | null;
+  exposure_time_seconds: number | null;
+  iso: number | null;
+  orientation: number | null;
   favorite: boolean;
   tags: Tag[];
   links: {
@@ -588,6 +606,9 @@ export type Album = {
   created_at: string;
   updated_at: string;
   photo_count: number;
+  latest_month: string | null;
+  oldest_taken_at: string | null;
+  newest_taken_at: string | null;
   cover_photo_id: string | null;
   visibility: "public" | "private";
   tags: Tag[];
@@ -608,6 +629,18 @@ export type Photo = {
   width: number | null;
   height: number | null;
   aspect_ratio: number | null;
+  gps_latitude: number | null;
+  gps_longitude: number | null;
+  camera_make: string | null;
+  camera_model: string | null;
+  lens_make: string | null;
+  lens_model: string | null;
+  focal_length_mm: number | null;
+  focal_length_35mm: number | null;
+  aperture_f_number: number | null;
+  exposure_time_seconds: number | null;
+  iso: number | null;
+  orientation: number | null;
   favorite: boolean;
   tags: Tag[];
   links: {
@@ -675,6 +708,9 @@ type Album struct {
 	CreatedAt    string `json:"created_at"`
 	UpdatedAt    string `json:"updated_at"`
 	PhotoCount   int    `json:"photo_count"`
+	LatestMonth  *string `json:"latest_month"`
+	OldestTakenAt *string `json:"oldest_taken_at"`
+	NewestTakenAt *string `json:"newest_taken_at"`
 	CoverPhotoID *string `json:"cover_photo_id"`
 	Visibility   string `json:"visibility"`
 	Tags         []Tag  `json:"tags"`
@@ -697,6 +733,18 @@ type Photo struct {
 	Width       *int    `json:"width"`
 	Height      *int    `json:"height"`
 	AspectRatio *float64 `json:"aspect_ratio"`
+	GPSLatitude  *float64 `json:"gps_latitude"`
+	GPSLongitude *float64 `json:"gps_longitude"`
+	CameraMake   *string `json:"camera_make"`
+	CameraModel  *string `json:"camera_model"`
+	LensMake     *string `json:"lens_make"`
+	LensModel    *string `json:"lens_model"`
+	FocalLengthMM       *float64 `json:"focal_length_mm"`
+	FocalLength35mm     *int     `json:"focal_length_35mm"`
+	ApertureFNumber     *float64 `json:"aperture_f_number"`
+	ExposureTimeSeconds *float64 `json:"exposure_time_seconds"`
+	ISO                 *int     `json:"iso"`
+	Orientation         *int     `json:"orientation"`
 	Favorite    bool    `json:"favorite"`
 	Tags        []Tag   `json:"tags"`
 	Links       PhotoLinks `json:"links"`

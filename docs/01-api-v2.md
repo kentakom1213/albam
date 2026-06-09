@@ -108,6 +108,9 @@ type Album = {
   created_at: string;
   updated_at: string;
   photo_count: number;
+  latest_month: string | null;
+  oldest_taken_at: string | null;
+  newest_taken_at: string | null;
   cover_photo_id: string | null;
   visibility: "public" | "private";
   breadcrumbs: Breadcrumb[];
@@ -191,6 +194,14 @@ MVP では，写真を 1 枚以上持つアルバムだけを返します．
 | -------- | ------ | ------: | ----------- |
 | `limit`  | number |    `50` | 取得件数    |
 | `offset` | number |     `0` | 開始位置    |
+| `sort`   | string | `date_desc` | 並び順      |
+
+`sort` は次を指定できます．
+
+```txt
+date_desc
+date_asc
+```
 
 ### Response
 
@@ -205,6 +216,9 @@ MVP では，写真を 1 枚以上持つアルバムだけを返します．
       "created_at": "2026-06-03T16:16:26Z",
       "updated_at": "2026-06-03T16:16:26Z",
       "photo_count": 12,
+      "latest_month": "2025/11",
+      "oldest_taken_at": "2025-11-01T10:20:00Z",
+      "newest_taken_at": "2025-11-14T07:56:39Z",
       "cover_photo_id": "x7KpQ2mL9a",
       "visibility": "private",
       "breadcrumbs": [],
@@ -304,6 +318,18 @@ type Photo = {
   width: number | null;
   height: number | null;
   aspect_ratio: number | null;
+  gps_latitude: number | null;
+  gps_longitude: number | null;
+  camera_make: string | null;
+  camera_model: string | null;
+  lens_make: string | null;
+  lens_model: string | null;
+  focal_length_mm: number | null;
+  focal_length_35mm: number | null;
+  aperture_f_number: number | null;
+  exposure_time_seconds: number | null;
+  iso: number | null;
+  orientation: number | null;
   favorite: boolean;
   links: {
     self: string;
@@ -364,6 +390,14 @@ albums/
 | -------- | ------ | ------: | ----------- |
 | `limit`  | number |   `100` | 取得件数    |
 | `offset` | number |     `0` | 開始位置    |
+| `sort`   | string | `taken_at_desc` | 並び順 |
+
+`sort` は次を指定できます．
+
+```txt
+taken_at_desc
+taken_at_asc
+```
 
 ### Response
 
@@ -597,6 +631,9 @@ export type Album = {
   created_at: string;
   updated_at: string;
   photo_count: number;
+  latest_month: string | null;
+  oldest_taken_at: string | null;
+  newest_taken_at: string | null;
   cover_photo_id: string | null;
   visibility: "public" | "private";
   breadcrumbs: Breadcrumb[];
@@ -617,6 +654,18 @@ export type Photo = {
   width: number | null;
   height: number | null;
   aspect_ratio: number | null;
+  gps_latitude: number | null;
+  gps_longitude: number | null;
+  camera_make: string | null;
+  camera_model: string | null;
+  lens_make: string | null;
+  lens_model: string | null;
+  focal_length_mm: number | null;
+  focal_length_35mm: number | null;
+  aperture_f_number: number | null;
+  exposure_time_seconds: number | null;
+  iso: number | null;
+  orientation: number | null;
   favorite: boolean;
   links: {
     self: string;
@@ -683,6 +732,9 @@ type Album struct {
 	CreatedAt    string       `json:"created_at"`
 	UpdatedAt    string       `json:"updated_at"`
 	PhotoCount   int          `json:"photo_count"`
+	LatestMonth  *string      `json:"latest_month"`
+	OldestTakenAt *string     `json:"oldest_taken_at"`
+	NewestTakenAt *string     `json:"newest_taken_at"`
 	CoverPhotoID *string      `json:"cover_photo_id"`
 	Visibility   string       `json:"visibility"`
 	Breadcrumbs  []Breadcrumb `json:"breadcrumbs"`
@@ -705,6 +757,18 @@ type Photo struct {
 	Width       *int       `json:"width"`
 	Height      *int       `json:"height"`
 	AspectRatio *float64   `json:"aspect_ratio"`
+	GPSLatitude  *float64   `json:"gps_latitude"`
+	GPSLongitude *float64   `json:"gps_longitude"`
+	CameraMake   *string    `json:"camera_make"`
+	CameraModel  *string    `json:"camera_model"`
+	LensMake     *string    `json:"lens_make"`
+	LensModel    *string    `json:"lens_model"`
+	FocalLengthMM       *float64 `json:"focal_length_mm"`
+	FocalLength35mm     *int     `json:"focal_length_35mm"`
+	ApertureFNumber     *float64 `json:"aperture_f_number"`
+	ExposureTimeSeconds *float64 `json:"exposure_time_seconds"`
+	ISO                 *int     `json:"iso"`
+	Orientation         *int     `json:"orientation"`
 	Favorite    bool       `json:"favorite"`
 	Links       PhotoLinks `json:"links"`
 }
