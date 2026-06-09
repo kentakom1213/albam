@@ -34,7 +34,7 @@ jobs:
             --exclude='default/node_modules' \
             --exclude='default/dist' \
             --exclude='default/.astro' \
-            -czf theme_default.tar.gz \
+            -czf "$RUNNER_TEMP/theme_default.tar.gz" \
             -C themes \
             default
 
@@ -51,4 +51,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "${GITHUB_REF_NAME}" theme_default.tar.gz --clobber
+          gh release upload "${GITHUB_REF_NAME}" "$RUNNER_TEMP/theme_default.tar.gz" --clobber
