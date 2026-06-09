@@ -102,11 +102,11 @@ func initProject(targetDir string, options initOptions) error {
 		return err
 	}
 
-	if err := os.MkdirAll(filepath.Join(targetDir, "albums"), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Join(targetDir, "albums/example"), 0o755); err != nil {
 		return err
 	}
 
-	if err := writeDummyImage(filepath.Join(targetDir, "albums", "sample.png"), options.force); err != nil {
+	if err := writeDummyImage(filepath.Join(targetDir, "albums/example", "sample.png"), options.force); err != nil {
 		return err
 	}
 

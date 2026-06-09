@@ -30,11 +30,12 @@ jobs:
 
       - name: Package default theme
         run: |
+          THEME_ASSET_NAME="albam-theme-default_${GITHUB_REF_NAME}.tar.gz"
           tar \
             --exclude='default/node_modules' \
             --exclude='default/dist' \
             --exclude='default/.astro' \
-            -czf "$RUNNER_TEMP/theme_default.tar.gz" \
+            -czf "$RUNNER_TEMP/$THEME_ASSET_NAME" \
             -C themes \
             default
 
@@ -51,4 +52,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "${GITHUB_REF_NAME}" "$RUNNER_TEMP/theme_default.tar.gz" --clobber
+          THEME_ASSET_NAME="albam-theme-default_${GITHUB_REF_NAME}.tar.gz"
+          gh release upload "${GITHUB_REF_NAME}" "$RUNNER_TEMP/$THEME_ASSET_NAME" --clobber
