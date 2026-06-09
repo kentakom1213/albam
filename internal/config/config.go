@@ -9,11 +9,12 @@ import (
 type Config struct {
 	Title string `toml:"title"`
 
-	Server   ServerConfig   `toml:"server"`
-	Media    MediaConfig    `toml:"media"`
-	Database DatabaseConfig `toml:"database"`
-	Build    BuildConfig    `toml:"build"`
-	Theme    ThemeConfig    `toml:"theme"`
+	Server        ServerConfig   `toml:"server"`
+	Media         MediaConfig    `toml:"media"`
+	PrivacyConfig PrivacyConfig  `toml:"privacy"`
+	Database      DatabaseConfig `toml:"database"`
+	Build         BuildConfig    `toml:"build"`
+	Theme         ThemeConfig    `toml:"theme"`
 }
 
 type ServerConfig struct {
@@ -25,6 +26,12 @@ type MediaConfig struct {
 	SourceDir             string `toml:"source_dir"`
 	CacheDir              string `toml:"cache_dir"`
 	AllowOriginalDownload bool   `toml:"allow_original_download"`
+}
+
+type PrivacyConfig struct {
+	MapEnabled        bool   `toml:"map_enabled"`
+	ExposeGPS         bool   `toml:"expose_gps"`
+	LocationPrecision string `toml:"location_precision"`
 }
 
 type DatabaseConfig struct {
@@ -51,6 +58,11 @@ func Default() Config {
 			SourceDir:             "albums",
 			CacheDir:              ".albam/cache",
 			AllowOriginalDownload: false,
+		},
+		PrivacyConfig: PrivacyConfig{
+			MapEnabled:        false,
+			ExposeGPS:         false,
+			LocationPrecision: "hidden",
 		},
 		Database: DatabaseConfig{
 			Path: ".albam/db.sqlite",

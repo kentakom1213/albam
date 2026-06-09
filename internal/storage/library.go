@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/kentakom1213/albam/internal/indexer"
 	"github.com/kentakom1213/albam/internal/model"
@@ -118,9 +119,14 @@ INSERT INTO assets (
 	file_mtime,
 	width,
 	height,
+	taken_at,
+	gps_latitude,
+	gps_longitude,
+	camera_make,
+	camera_model,
 	updated_at
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 ON CONFLICT(path) DO UPDATE SET
 	album_id = excluded.album_id,
 	filename = excluded.filename,
@@ -129,6 +135,11 @@ ON CONFLICT(path) DO UPDATE SET
 	file_mtime = excluded.file_mtime,
 	width = excluded.width,
 	height = excluded.height,
+	taken_at = excluded.taken_at,
+	gps_latitude = excluded.gps_latitude,
+	gps_longitude = excluded.gps_longitude,
+	camera_make = excluded.camera_make,
+	camera_model = excluded.camera_model,
 	updated_at = CURRENT_TIMESTAMP
 `,
 		albumID,
@@ -140,17 +151,14 @@ ON CONFLICT(path) DO UPDATE SET
 		asset.ModTime,
 		nullInt(asset.Width),
 		nullInt(asset.Height),
+		nullTime(asset.TakenAt),
+		nullFloat(asset.GPSLatitude),
+		nullFloat(asset.GPSLongitude),
+		nullString(asset.CameraMake),
+		nullString(asset.CameraModel),
 	)
 
 	return err
-}
-
-func nullInt(value int) any {
-	if value <= 0 {
-		return nil
-	}
-
-	return value
 }
 
 func resolveParentID(albumPath string, albumIDByPath map[string]int64) (int64, bool) {
@@ -201,4 +209,33 @@ func albumPathFromAssetPath(assetPath string) string {
 	}
 
 	return assetPath[:idx]
+}
+
+func nullInt(value int) any {
+	if value <= 0 {
+		return nil
+	}
+
+	return value
+}
+
+func nullFloat(value *float64) any {
+	if value == nil {
+		return nil
+	}
+	return *value
+}
+
+func nullTime(value *time.Time) any {
+	if value == nil {
+		return nil
+	}
+	return value.Format(time.RFC3339)
+}
+
+func nullString(value *string) any {
+	if value == nil || *value == "" {
+		return nil
+	}
+	return *value
 }

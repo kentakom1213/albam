@@ -9,6 +9,11 @@ source_dir = "albums"
 cache_dir = ".albam/cache"
 allow_original_download = false
 
+[privacy]
+map_enabled = false
+expose_gps = false
+location_precision = "hidden"
+
 [database]
 path = ".albam/db.sqlite"
 

@@ -19,6 +19,12 @@ type Asset struct {
 	Ext      string
 	Size     int64
 	ModTime  time.Time
-	Width    int
-	Height   int
+
+	Width        int
+	Height       int
+	TakenAt      *time.Time
+	GPSLatitude  *float64
+	GPSLongitude *float64
+	CameraMake   *string
+	CameraModel  *string
 }
