@@ -4,6 +4,7 @@ export type Album = {
   kind: string;
   description: string;
   photoCount: number;
+  latestMonth?: string;
   createdAt: string;
   updatedAt: string;
   size: string;
@@ -30,6 +31,7 @@ export const albums: Album[] = [
     kind: "DAILY ALBUM",
     description: "春の散歩で見つけたやわらかな光と街角の記録です。",
     photoCount: 24,
+    latestMonth: "2026/05",
     createdAt: "May 02, 2026",
     updatedAt: "May 04, 2026",
     size: "620 MB",
@@ -42,6 +44,7 @@ export const albums: Album[] = [
     kind: "DAILY ALBUM",
     description: "お気に入りのカフェと日常の記録です。",
     photoCount: 12,
+    latestMonth: "2026/05",
     createdAt: "May 12, 2026",
     updatedAt: "May 12, 2026",
     size: "320 MB",
@@ -54,6 +57,7 @@ export const albums: Album[] = [
     kind: "FLOWER ALBUM",
     description: "散歩中に見つけた小さな花のアルバムです。",
     photoCount: 36,
+    latestMonth: "2026/04",
     createdAt: "Apr 29, 2026",
     updatedAt: "May 01, 2026",
     size: "860 MB",
@@ -67,6 +71,7 @@ export const albums: Album[] = [
     description:
       "友人との週末旅行。海沿いの散歩，カフェ，夕方の空をまとめたアルバムです。",
     photoCount: 48,
+    latestMonth: "2026/05",
     createdAt: "May 18, 2026",
     updatedAt: "May 23, 2026",
     size: "1.2 GB",
@@ -79,6 +84,7 @@ export const albums: Album[] = [
     kind: "ROOM ALBUM",
     description: "部屋の光と小物のスナップです。",
     photoCount: 18,
+    latestMonth: "2026/04",
     createdAt: "Apr 21, 2026",
     updatedAt: "Apr 25, 2026",
     size: "410 MB",
@@ -91,6 +97,7 @@ export const albums: Album[] = [
     kind: "SKY ALBUM",
     description: "晴れた日の空を集めたアルバムです。",
     photoCount: 29,
+    latestMonth: "2026/04",
     createdAt: "Apr 18, 2026",
     updatedAt: "Apr 20, 2026",
     size: "700 MB",
@@ -103,6 +110,7 @@ export const albums: Album[] = [
     kind: "DAILY ALBUM",
     description: "朝のテーブルと散歩道の記録です。",
     photoCount: 16,
+    latestMonth: "2026/04",
     createdAt: "Apr 11, 2026",
     updatedAt: "Apr 11, 2026",
     size: "390 MB",
@@ -115,6 +123,7 @@ export const albums: Album[] = [
     kind: "DAILY ALBUM",
     description: "公園で過ごした日の写真です。",
     photoCount: 21,
+    latestMonth: "2026/04",
     createdAt: "Apr 02, 2026",
     updatedAt: "Apr 03, 2026",
     size: "520 MB",
@@ -127,6 +136,7 @@ export const albums: Album[] = [
     kind: "HOME ALBUM",
     description: "家で過ごす時間の小さな記録です。",
     photoCount: 32,
+    latestMonth: "2026/03",
     createdAt: "Mar 29, 2026",
     updatedAt: "Apr 01, 2026",
     size: "920 MB",
@@ -139,6 +149,7 @@ export const albums: Album[] = [
     kind: "FILM ALBUM",
     description: "フィルム風に残した日々のメモです。",
     photoCount: 14,
+    latestMonth: "2026/03",
     createdAt: "Mar 20, 2026",
     updatedAt: "Mar 21, 2026",
     size: "280 MB",

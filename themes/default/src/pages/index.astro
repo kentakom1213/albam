@@ -104,6 +104,7 @@ const theme = getThemeConfig();
 
   function albumCard(album: Album, index: number) {
     const tone = album.tone ?? tones[index % tones.length];
+    const albumDate = album.latestMonth ? `<span>${escapeHTML(album.latestMonth)}</span>` : "";
 
     return `
       <a class="album-card" href="/albums/${encodeURIComponent(album.id)}/">
@@ -113,7 +114,10 @@ const theme = getThemeConfig();
         <div class="album-meta">
           <div>
             <h2>${escapeHTML(album.title)}</h2>
-            <p>${album.photoCount.toLocaleString("en-US")} photos</p>
+            <p class="album-summary">
+              <span>${album.photoCount.toLocaleString("en-US")} photos</span>
+              ${albumDate}
+            </p>
           </div>
         </div>
       </a>
@@ -358,6 +362,11 @@ const theme = getThemeConfig();
     box-shadow: 0 10px 24px rgb(0 0 0 / 5%);
   }
 
+  .album-grid :global(.album-card:active .album-image),
+  .album-grid :global(.album-card:hover .album-image) {
+    transform: scale(1.025);
+  }
+
   .album-grid :global(.loading-card) {
     pointer-events: none;
   }
@@ -369,6 +378,9 @@ const theme = getThemeConfig();
 
   .album-grid :global(.album-image) {
     aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 12px;
+    transition: transform 180ms ease;
   }
 
   .album-grid :global(.image),
@@ -486,6 +498,12 @@ const theme = getThemeConfig();
     color: var(--theme-muted);
     font-size: 13px;
     font-weight: 500;
+  }
+
+  .album-grid :global(.album-summary) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
   }
 
   :global(.peach) {

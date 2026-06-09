@@ -15,6 +15,7 @@ export type ApiAlbum = {
   created_at: string;
   updated_at: string;
   photo_count: number;
+  latest_month: string | null;
   cover_photo_id: string | null;
   visibility: "public" | "private";
   breadcrumbs: ApiBreadcrumb[];
@@ -64,6 +65,7 @@ export type Album = {
   kind: string;
   description: string;
   photoCount: number;
+  latestMonth?: string;
   createdAt: string;
   updatedAt: string;
   size: string;
@@ -241,6 +243,7 @@ export function toAlbum(album: ApiAlbum, index = 0): Album {
     kind: "PHOTO ALBUM",
     description: album.description,
     photoCount: album.photo_count,
+    latestMonth: album.latest_month ?? undefined,
     createdAt: formatDate(album.created_at),
     updatedAt: formatDate(album.updated_at),
     size: "-",

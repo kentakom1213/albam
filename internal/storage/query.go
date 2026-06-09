@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"errors"
+	"strings"
 )
 
 type AlbumRow struct {
@@ -14,6 +15,7 @@ type AlbumRow struct {
 	UpdatedAt    string
 	PhotoCount   int
 	CoverPhotoID sql.NullString
+	LatestMonth  sql.NullString
 }
 
 type AssetRow struct {
@@ -89,6 +91,14 @@ LIMIT ? OFFSET ?
 		return nil, 0, err
 	}
 
+	for i := range albums {
+		latestMonth, err := s.GetLatestAssetMonthByAlbumSlug(albums[i].Slug)
+		if err != nil {
+			return nil, 0, err
+		}
+		albums[i].LatestMonth = latestMonth
+	}
+
 	return albums, total, nil
 }
 
@@ -133,7 +143,103 @@ GROUP BY albums.id
 		return nil, err
 	}
 
+	latestMonth, err := s.GetLatestAssetMonthByAlbumSlug(album.Slug)
+	if err != nil {
+		return nil, err
+	}
+	album.LatestMonth = latestMonth
+
 	return &album, nil
+}
+
+func (s *Storage) GetLatestAssetMonthByAlbumSlug(slug string) (sql.NullString, error) {
+	rows, err := s.db.Query(`
+SELECT assets.path
+FROM albums AS root
+JOIN albums AS child
+	ON child.path = root.path
+	OR (
+		child.path COLLATE BINARY >= root.path || '/'
+		AND child.path COLLATE BINARY < root.path || '0'
+	)
+JOIN assets ON assets.album_id = child.id
+WHERE root.slug = ?
+`, slug)
+	if err != nil {
+		return sql.NullString{}, err
+	}
+	defer rows.Close()
+
+	latest := ""
+	for rows.Next() {
+		var assetPath string
+		if err := rows.Scan(&assetPath); err != nil {
+			return sql.NullString{}, err
+		}
+
+		month := assetMonthFromPath(assetPath)
+		if month > latest {
+			latest = month
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return sql.NullString{}, err
+	}
+	if latest == "" {
+		return sql.NullString{}, nil
+	}
+
+	return sql.NullString{String: latest, Valid: true}, nil
+}
+
+func assetMonthFromPath(assetPath string) string {
+	parts := strings.Split(assetPath, "/")
+	for i := 0; i < len(parts)-1; i++ {
+		if isYearPart(parts[i]) && hasMonthPrefix(parts[i+1]) {
+			return parts[i] + "/" + parts[i+1][:2]
+		}
+	}
+
+	for _, part := range parts {
+		if len(part) < 10 {
+			continue
+		}
+
+		for i := 0; i <= len(part)-10; i++ {
+			if part[i:i+4] == "PXL_" && isYearPart(part[i+4:i+8]) && isMonth(part[i+8:i+10]) {
+				return part[i+4:i+8] + "/" + part[i+8:i+10]
+			}
+		}
+	}
+
+	return ""
+}
+
+func isYearPart(value string) bool {
+	if len(value) != 4 {
+		return false
+	}
+
+	for _, char := range value {
+		if char < '0' || char > '9' {
+			return false
+		}
+	}
+
+	return true
+}
+
+func hasMonthPrefix(value string) bool {
+	if len(value) < 2 {
+		return false
+	}
+
+	return isMonth(value[:2])
+}
+
+func isMonth(value string) bool {
+	return value >= "01" && value <= "12"
 }
 
 func (s *Storage) GetAssetByID(id int64) (*AssetRow, error) {

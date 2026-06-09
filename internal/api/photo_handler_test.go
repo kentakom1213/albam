@@ -104,13 +104,22 @@ func saveTestLibrary(t *testing.T, store *storage.Storage) {
 		},
 		Assets: []model.Asset{
 			{
-				Path:     "weekend-trip/photo-001.jpg",
-				Filename: "photo-001.jpg",
+				Path:     "weekend-trip/PXL_20260402_030405000.jpg",
+				Filename: "PXL_20260402_030405000.jpg",
 				Ext:      ".jpg",
 				Size:     123,
 				ModTime:  time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC),
 				Width:    1600,
 				Height:   900,
+			},
+			{
+				Path:     "weekend-trip/PXL_20260502_030405000.jpg",
+				Filename: "PXL_20260502_030405000.jpg",
+				Ext:      ".jpg",
+				Size:     456,
+				ModTime:  time.Date(2026, 1, 3, 3, 4, 5, 0, time.UTC),
+				Width:    900,
+				Height:   1600,
 			},
 		},
 	}); err != nil {

@@ -19,9 +19,9 @@ const theme = getThemeConfig();
       </nav>
 
       <div class="toolbar-chips" aria-label="Photo filters">
-        <span class="chip active small">All</span>
-        <span class="chip small">Favorites</span>
-        <span class="chip small">Newest</span>
+        <span class="chip active small">Newest</span>
+        <span class="chip small">Oldest</span>
+        <span class="chip small">Favorite</span>
         <button class="help-button" type="button" aria-label="Album info" aria-expanded="false">?</button>
       </div>
     </div>
@@ -860,8 +860,13 @@ const theme = getThemeConfig();
   }
 
   :global(.photo-card:hover) {
-    border-color: color-mix(in srgb, var(--theme-current-accent) 30%, var(--theme-border));
-    box-shadow: 0 10px 24px rgb(0 0 0 / 7%);
+    border-color: rgb(0 0 0 / 6%);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 3%);
+  }
+
+  :global(.photo-card:active .photo-image),
+  :global(.photo-card:hover .photo-image) {
+    transform: scale(1.035);
   }
 
   :global(.photo-card:focus-visible) {
@@ -877,6 +882,7 @@ const theme = getThemeConfig();
   :global(.photo-image) {
     width: 100%;
     height: 100%;
+    transition: transform 180ms ease;
   }
 
   :global(.loading-image) {

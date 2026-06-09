@@ -19,6 +19,7 @@ type Album struct {
 	CreatedAt    string       `json:"created_at"`
 	UpdatedAt    string       `json:"updated_at"`
 	PhotoCount   int          `json:"photo_count"`
+	LatestMonth  *string      `json:"latest_month"`
 	CoverPhotoID *string      `json:"cover_photo_id"`
 	Visibility   string       `json:"visibility"`
 	Breadcrumbs  []Breadcrumb `json:"breadcrumbs"`

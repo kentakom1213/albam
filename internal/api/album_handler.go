@@ -103,6 +103,7 @@ func (s *Server) handleGetAlbum(w http.ResponseWriter, r *http.Request, albumID 
 func albumFromRow(row storage.AlbumRow) Album {
 	var coverPhotoID *string
 	var coverURL *string
+	var latestMonth *string
 
 	if row.CoverPhotoID.Valid {
 		id := row.CoverPhotoID.String
@@ -110,6 +111,11 @@ func albumFromRow(row storage.AlbumRow) Album {
 
 		url := "/media/photos/" + id + "/thumb"
 		coverURL = &url
+	}
+
+	if row.LatestMonth.Valid {
+		month := row.LatestMonth.String
+		latestMonth = &month
 	}
 
 	return Album{
@@ -120,6 +126,7 @@ func albumFromRow(row storage.AlbumRow) Album {
 		CreatedAt:    row.CreatedAt,
 		UpdatedAt:    row.UpdatedAt,
 		PhotoCount:   row.PhotoCount,
+		LatestMonth:  latestMonth,
 		CoverPhotoID: coverPhotoID,
 		Visibility:   "private",
 		Breadcrumbs:  []Breadcrumb{},
