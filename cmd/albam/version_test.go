@@ -56,3 +56,15 @@ func TestVersionInfoFromBuildInfoUsesVCSSettings(t *testing.T) {
 		t.Fatalf("BuiltAt = %q, want %q", info.BuiltAt, "2026-06-09T12:00:00Z")
 	}
 }
+
+func TestBuildInfoVCSModified(t *testing.T) {
+	modified := buildInfoVCSModified(&debug.BuildInfo{
+		Settings: []debug.BuildSetting{
+			{Key: "vcs.modified", Value: "true"},
+		},
+	}, true)
+
+	if !modified {
+		t.Fatal("buildInfoVCSModified = false, want true")
+	}
+}

@@ -3,8 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os/exec"
 	"runtime"
 	"runtime/debug"
+	"strings"
 )
 
 var (
@@ -21,11 +23,17 @@ type versionInfo struct {
 
 func currentVersionInfo() versionInfo {
 	buildInfo, ok := debug.ReadBuildInfo()
-	return versionInfoFromBuildInfo(buildInfo, ok, versionInfo{
+	info := versionInfoFromBuildInfo(buildInfo, ok, versionInfo{
 		Version: version,
 		Commit:  commit,
 		BuiltAt: builtAt,
 	})
+	if info.Version == "dev" && !buildInfoVCSModified(buildInfo, ok) {
+		if tag, err := currentGitTag(); err == nil && tag != "" {
+			info.Version = tag
+		}
+	}
+	return info
 }
 
 func versionInfoFromBuildInfo(buildInfo *debug.BuildInfo, ok bool, fallback versionInfo) versionInfo {
@@ -62,6 +70,29 @@ func versionInfoFromBuildInfo(buildInfo *debug.BuildInfo, ok bool, fallback vers
 	}
 
 	return info
+}
+
+func buildInfoVCSModified(buildInfo *debug.BuildInfo, ok bool) bool {
+	if !ok || buildInfo == nil {
+		return false
+	}
+
+	for _, setting := range buildInfo.Settings {
+		if setting.Key == "vcs.modified" {
+			return setting.Value == "true"
+		}
+	}
+
+	return false
+}
+
+func currentGitTag() (string, error) {
+	output, err := exec.Command("git", "describe", "--tags", "--exact-match", "HEAD").Output()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(string(output)), nil
 }
 
 func runVersion(args []string) error {
