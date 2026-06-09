@@ -28,6 +28,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gcc libc6-dev
 
+      - name: Package default theme
+        run: |
+          tar \
+            --exclude='default/node_modules' \
+            --exclude='default/dist' \
+            --exclude='default/.astro' \
+            -czf theme_default.tar.gz \
+            -C themes \
+            default
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
@@ -36,3 +46,9 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload default theme asset
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${GITHUB_REF_NAME}" theme_default.tar.gz --clobber
