@@ -22,7 +22,17 @@ export type ThemeConfig = {
   };
   nav: {
     albums: string;
-    settings: string;
+  };
+  header: {
+    enabled: boolean;
+  };
+  footer: {
+    text: string;
+    poweredBy: boolean;
+  };
+  favicon: {
+    href: string;
+    type: string;
   };
 };
 
@@ -40,12 +50,22 @@ type RawThemeConfig = {
     photo_grid_columns?: number;
     nav?: {
       albums?: string;
-      settings?: string;
+    };
+    header?: {
+      enabled?: boolean;
+    };
+    footer?: {
+      text?: string;
+      powered_by?: boolean;
+    };
+    favicon?: {
+      href?: string;
+      type?: string;
     };
   };
 };
 
-type TomlObject = Record<string, string | number | TomlObject>;
+type TomlObject = Record<string, string | number | boolean | TomlObject>;
 
 const accents: Record<AccentName, { color: string; soft: string }> = {
   pink: { color: "#ff6fae", soft: "#ffe3ef" },
@@ -78,7 +98,17 @@ const defaults: ThemeConfig = {
   },
   nav: {
     albums: "Albums",
-    settings: "Settings",
+  },
+  header: {
+    enabled: true,
+  },
+  footer: {
+    text: "",
+    poweredBy: true,
+  },
+  favicon: {
+    href: "/favicon.svg",
+    type: "image/svg+xml",
   },
 };
 
@@ -110,7 +140,17 @@ export function getThemeConfig(): ThemeConfig {
     },
     nav: {
       albums: stringValue(params.nav?.albums, defaults.nav.albums),
-      settings: stringValue(params.nav?.settings, defaults.nav.settings),
+    },
+    header: {
+      enabled: booleanValue(params.header?.enabled, defaults.header.enabled),
+    },
+    footer: {
+      text: stringValue(params.footer?.text, defaults.footer.text),
+      poweredBy: booleanValue(params.footer?.powered_by, defaults.footer.poweredBy),
+    },
+    favicon: {
+      href: stringValue(params.favicon?.href, defaults.favicon.href),
+      type: stringValue(params.favicon?.type, defaults.favicon.type),
     },
   };
 }
@@ -127,6 +167,10 @@ function numberValue(value: unknown, fallback: number, min: number, max: number)
   return typeof value === "number" && Number.isInteger(value)
     ? Math.min(Math.max(value, min), max)
     : fallback;
+}
+
+function booleanValue(value: unknown, fallback: boolean) {
+  return typeof value === "boolean" ? value : fallback;
 }
 
 function accentValue(value: unknown, fallback: AccentName): AccentName {
@@ -159,18 +203,24 @@ function parseThemeToml(source: string): RawThemeConfig {
     const numberMatch = trimmed.match(/^([A-Za-z0-9_-]+)\s*=\s*([0-9]+)$/);
     if (numberMatch) {
       assignValue(parsed, section, numberMatch[1], Number.parseInt(numberMatch[2], 10));
+      continue;
+    }
+
+    const booleanMatch = trimmed.match(/^([A-Za-z0-9_-]+)\s*=\s*(true|false)$/);
+    if (booleanMatch) {
+      assignValue(parsed, section, booleanMatch[1], booleanMatch[2] === "true");
     }
   }
 
   return parsed as RawThemeConfig;
 }
 
-function assignValue(target: TomlObject, section: string[], key: string, value: string | number) {
+function assignValue(target: TomlObject, section: string[], key: string, value: string | number | boolean) {
   let current = target;
 
   for (const segment of section) {
     const next = current[segment];
-    if (!next || typeof next === "string") {
+    if (!next || typeof next !== "object") {
       current[segment] = {};
     }
     current = current[segment] as TomlObject;

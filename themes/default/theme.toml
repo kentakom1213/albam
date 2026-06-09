@@ -12,4 +12,14 @@ photo_grid_columns = 5
 
 [params.nav]
 albums = "Albums"
-settings = "Settings"
+
+[params.header]
+enabled = true
+
+[params.footer]
+text = "© 2026 powell"
+powered_by = true
+
+[params.favicon]
+href = "/favicon.svg"
+type = "image/svg+xml"

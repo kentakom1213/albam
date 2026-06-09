@@ -164,8 +164,17 @@ photo_grid_columns = 6
 
 [params.nav]
 albums = "Albums"
-tags = "Tags"
-settings = "Settings"
+
+[params.header]
+enabled = true
+
+[params.footer]
+text = "© 2026 powell"
+powered_by = true
+
+[params.favicon]
+href = "/favicon.svg"
+type = "image/svg+xml"
 ```
 
 `accent` は，`pink`，`coral`，`mint`，`blue`，`lavender`，`lemon`，`red`，`beige` から選べます．

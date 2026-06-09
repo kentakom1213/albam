@@ -1,6 +1,8 @@
 ---
 import "../styles/theme.css";
 import "../styles/global.css";
+import Footer from "./Footer.astro";
+import Header from "./Header.astro";
 import { getThemeConfig } from "../lib/theme-config";
 
 type Props = {
@@ -10,6 +12,7 @@ type Props = {
 const { title = "albam" } = Astro.props;
 const theme = getThemeConfig();
 const accentStyle = `--theme-current-accent: ${theme.accent.color}; --theme-current-accent-soft: ${theme.accent.soft};`;
+const hasFavicon = theme.favicon.href !== "";
 ---
 
 <!doctype html>
@@ -18,9 +21,16 @@ const accentStyle = `--theme-current-accent: ${theme.accent.color}; --theme-curr
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
+    {
+      hasFavicon && (
+        <link rel="icon" href={theme.favicon.href} type={theme.favicon.type || undefined} />
+      )
+    }
     <title>{title}</title>
   </head>
   <body style={accentStyle}>
+    {theme.header.enabled && <Header />}
     <slot />
+    <Footer />
   </body>
 </html>

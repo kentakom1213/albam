@@ -2,14 +2,16 @@
 import { getThemeConfig } from "../lib/theme-config";
 
 const theme = getThemeConfig();
-const hasBrand = theme.brand !== "";
+const brand = theme.brand;
+const hasBrand = brand !== "";
+const albumsLabel = theme.nav.albums;
 ---
 
 <header class="site-header">
   {
     hasBrand && (
-      <a class="brand" href="/" aria-label={`${theme.brand} home`}>
-        <span>{theme.brand}</span>
+      <a class="brand" href="/" aria-label={`${brand} home`}>
+        <span>{brand}</span>
         <span class="brand-dot" aria-hidden="true"></span>
       </a>
     )
@@ -17,8 +19,7 @@ const hasBrand = theme.brand !== "";
 
   <div class="header-actions">
     <nav class="site-nav" aria-label="Primary navigation">
-      <a class="active" href="/">{theme.nav.albums}</a>
-      <a href="/">{theme.nav.settings}</a>
+      <a class="active" href="/">{albumsLabel}</a>
     </nav>
   </div>
 </header>

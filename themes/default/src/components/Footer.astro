@@ -1,0 +1,52 @@
+---
+import { getThemeConfig } from "../lib/theme-config";
+
+const theme = getThemeConfig();
+const hasText = theme.footer.text !== "";
+const hasFooter = hasText || theme.footer.poweredBy;
+---
+
+{
+  hasFooter && (
+    <footer class="site-footer">
+      {hasText && <span>{theme.footer.text}</span>}
+      {hasText && theme.footer.poweredBy && <span class="footer-separator" aria-hidden="true">|</span>}
+      {
+        theme.footer.poweredBy && (
+          <span>
+            Powered by{" "}
+            <a href="https://github.com/kentakom1213/albam" rel="noreferrer" target="_blank">
+              albam
+            </a>
+          </span>
+        )
+      }
+    </footer>
+  )
+}
+
+<style>
+  .site-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 40px 24px 32px;
+    color: var(--theme-muted);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .site-footer a {
+    color: var(--theme-text);
+    font-weight: 700;
+    text-decoration: underline;
+    text-decoration-color: var(--theme-current-accent);
+    text-underline-offset: 3px;
+  }
+
+  .footer-separator {
+    color: var(--theme-border);
+  }
+</style>
