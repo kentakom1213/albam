@@ -126,20 +126,27 @@ function layoutRow(args: {
   const { row, y, isLastRow, options, items } = args;
   const baseWidths = row.map((photo) => getBaseTileWidth(photo, options));
   const gapWidth = options.gap * Math.max(0, row.length - 1);
-  const availableImageWidth = options.containerWidth - gapWidth;
+  const availableImageWidth = Math.max(0, options.containerWidth - gapWidth);
   const rawImageWidth = baseWidths.reduce((sum, width) => sum + width, 0);
   let scale = rawImageWidth > 0 ? availableImageWidth / rawImageWidth : 1;
 
-  if (isLastRow && !options.justifyLastRow) {
+  const shouldFillRow = !isLastRow || options.justifyLastRow;
+  if (!shouldFillRow) {
     scale = 1;
   } else {
     scale = clamp(scale, options.minScale, options.maxScale);
   }
 
+  const scaledWidths = baseWidths.map((width) => width * scale);
+  const tileWidths = fitRowWidths({
+    widths: scaledWidths,
+    availableImageWidth,
+    fillRow: shouldFillRow,
+  });
   let x = 0;
 
   row.forEach((photo, index) => {
-    const width = Math.round(baseWidths[index] * scale);
+    const width = tileWidths[index];
 
     items.push({
       id: photo.id,
@@ -151,6 +158,48 @@ function layoutRow(args: {
 
     x += width + options.gap;
   });
+}
+
+function fitRowWidths(args: {
+  widths: number[];
+  availableImageWidth: number;
+  fillRow: boolean;
+}): number[] {
+  const { widths, availableImageWidth, fillRow } = args;
+  const rowWidth = widths.reduce((sum, width) => sum + width, 0);
+
+  if (rowWidth <= 0 || availableImageWidth <= 0) {
+    return widths.map(() => 0);
+  }
+
+  if (!fillRow && rowWidth <= availableImageWidth) {
+    const roundedWidths = widths.map((width) => Math.round(width));
+    const roundedRowWidth = roundedWidths.reduce((sum, width) => sum + width, 0);
+
+    if (roundedRowWidth <= availableImageWidth) {
+      return roundedWidths;
+    }
+  }
+
+  const targetWidth = fillRow ? availableImageWidth : Math.min(rowWidth, availableImageWidth);
+  const adjustedWidths = widths.map((width) => width * (targetWidth / rowWidth));
+  return roundWidthsToTarget(adjustedWidths, Math.floor(targetWidth));
+}
+
+function roundWidthsToTarget(widths: number[], targetWidth: number): number[] {
+  const floors = widths.map((width) => Math.floor(width));
+  let remaining = targetWidth - floors.reduce((sum, width) => sum + width, 0);
+
+  const indexes = widths
+    .map((width, index) => ({ index, fraction: width - Math.floor(width) }))
+    .sort((a, b) => b.fraction - a.fraction);
+
+  for (let i = 0; i < indexes.length && remaining > 0; i++) {
+    floors[indexes[i].index] += 1;
+    remaining -= 1;
+  }
+
+  return floors;
 }
 
 export function buildFixedRowLayout(
