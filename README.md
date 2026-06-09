@@ -1,16 +1,32 @@
 # albam
 
-`albam` は，ローカルの画像ディレクトリを読み取り，アルバム・写真情報を SQLite に保存する Go 製 CLI です．
+`albam` は，ローカルの画像ディレクトリからセルフホスト型の写真アルバムを作るためのツールです．
 
-現在の CLI では，主に次の操作ができます．
+画像ファイルを `albums/` に置き，`albam index` でアルバム情報を作成し，`albam serve` でブラウザから見られるアルバムサイトとして公開できます．
+
+Go 製のサーバーと Astro 製のテーマを組み合わせ，1 つの `albam` コマンドで次の処理を扱います．
 
 ```txt
-albam init
-albam index
-albam build
-albam serve
-albam version
+- アルバムプロジェクトの作成
+- 画像ディレクトリの読み取り
+- アルバム・写真メタデータの保存
+- テーマのビルド
+- Web UI，JSON API，画像ファイルの配信
 ```
+
+Hugo のように，ローカルのファイルを元にサイトを構築し，そのまま Go 製サーバーとして起動できる構成を目指しています．
+
+## 特徴
+
+`albam` は，次のような用途を想定しています．
+
+- 手元の写真ディレクトリをそのままアルバム化する
+- 写真本体はファイルシステムに置いたまま，メタデータだけを SQLite に保存する
+- 自分のサーバーや Raspberry Pi などで写真アルバムを公開する
+- Astro 製テーマを差し替えて，見た目をカスタマイズする
+- Caddy，nginx，Cloudflare Tunnel などの背後で運用する
+
+画像ファイルは DB に保存しません．`albam` は画像のパスやアルバム情報を SQLite に保存し，必要に応じて画像ファイルを配信します．
 
 ## インストール
 
@@ -26,7 +42,7 @@ go install github.com/kentakom1213/albam/cmd/albam@latest
 go install github.com/kentakom1213/albam/cmd/albam@v0.1.0
 ```
 
-インストール後，次で確認します．
+インストールできたか確認します．
 
 ```sh
 albam version
@@ -47,40 +63,45 @@ go build -o bin/albam ./cmd/albam
 ./bin/albam version
 ```
 
-## 必要なもの
+## はじめてのアルバムを作る
 
-`albam index` と `albam serve --api-only` を使うだけなら，Go 製バイナリだけで動作します．
-
-`albam build` を使う場合は，テーマディレクトリで `pnpm build` を実行するため，`pnpm` が必要です．
-
-```sh
-cd themes/default
-pnpm install
-```
-
-また，`go install` や手元ビルドで SQLite ドライバをビルドする場合，環境によっては C コンパイラが必要です．
-
-## クイックスタート
-
-新しいプロジェクトを作成します．
+新しいアルバムプロジェクトを作成します．
 
 ```sh
 albam init my-album
 cd my-album
 ```
 
-`init` は，設定ファイル，画像ディレクトリ，内部データ用ディレクトリ，サンプル画像を作成します．デフォルトでは `themes/default` も GitHub Releases から取得します．
+`albam init` は，次のようなプロジェクト構成を作成します．
 
-テーマを取得せずに初期化する場合は，次のようにします．
-
-```sh
-albam init my-album --no-theme
+```txt
+my-album/
+├── albam.toml
+├── albums/
+│   └── example/
+│       └── sample.png
+├── themes/
+│   └── default/
+│       └── theme.toml
+└── .albam/
 ```
 
-既存ファイルを上書きして初期化する場合は，`--force` を使います．
+写真は `albums/` 以下に置きます．たとえば，次のような構成にできます．
 
-```sh
-albam init my-album --force
+```txt
+albums/
+├── weekend-trip/
+│   ├── IMG_001.jpg
+│   └── IMG_002.jpg
+└── coffee-time/
+    └── IMG_101.jpg
+```
+
+`albam` は，画像ファイルの親ディレクトリをアルバムとして扱います．
+
+```txt
+albums/weekend-trip/IMG_001.jpg
+  -> album: weekend-trip
 ```
 
 画像を追加したら，インデックスを作成します．
@@ -104,35 +125,53 @@ albam build
 albam serve
 ```
 
-デフォルトでは，次のアドレスで起動します．
+デフォルトでは，次のアドレスで開けます．
 
 ```txt
 http://127.0.0.1:8080
 ```
 
-## ディレクトリ構成
+## 基本的な流れ
 
-`albam init my-album` を実行すると，おおむね次の構成が作成されます．
+通常は，次の順番で使います．
 
-```txt
-my-album/
-├── albam.toml
-├── albums/
-│   └── example/
-│       └── sample.png
-├── themes/
-│   └── default/
-└── .albam/
+```sh
+albam init my-album
+cd my-album
+
+# albums/ に画像を追加する
+albam index
+
+# Web UI をビルドする
+cd themes/default
+pnpm install
+cd ../..
+albam build
+
+# アルバムサイトを起動する
+albam serve
 ```
 
-インデックス作成やビルド後は，次のような構成になります．
+写真を追加・削除したときは，もう一度 `albam index` を実行します．
+
+```sh
+albam index
+```
+
+テーマを変更したときは，もう一度 `albam build` を実行します．
+
+```sh
+albam build
+```
+
+## ディレクトリ構成
+
+標準的なプロジェクト構成は次の通りです．
 
 ```txt
 my-album/
 ├── albam.toml
 ├── albums/
-│   ├── example/
-│   │   └── sample.png
 │   ├── weekend-trip/
 │   │   ├── IMG_001.jpg
 │   │   └── IMG_002.jpg
@@ -140,27 +179,30 @@ my-album/
 │       └── IMG_101.jpg
 ├── themes/
 │   └── default/
+│       ├── theme.toml
+│       ├── package.json
+│       ├── astro.config.mjs
+│       └── src/
 └── .albam/
     ├── public/
     ├── cache/
     └── db.sqlite
 ```
 
-各パスの役割は次の通りです．
-
-| path                        | 説明                          |
-| --------------------------- | ----------------------------- |
-| `albam.toml`                | プロジェクト設定              |
-| `albums/`                   | 元画像ディレクトリ            |
-| `albums/example/sample.png` | `init` が作成するサンプル画像 |
-| `themes/default/`           | テーマディレクトリ            |
-| `.albam/public/`            | ビルド済みテーマ              |
-| `.albam/cache/`             | 画像キャッシュ                |
-| `.albam/db.sqlite`          | アルバム・写真メタデータ      |
+| path                          | 説明                        |
+| ----------------------------- | --------------------------- |
+| `albam.toml`                  | プロジェクト設定            |
+| `albums/`                     | 元画像ディレクトリ          |
+| `themes/default/`             | Astro 製テーマ              |
+| `themes/default/theme.toml`   | テーマ設定                  |
+| `themes/default/package.json` | テーマの npm パッケージ設定 |
+| `.albam/public/`              | ビルド済みテーマ            |
+| `.albam/cache/`               | 画像キャッシュ              |
+| `.albam/db.sqlite`            | アルバム・写真メタデータ    |
 
 ## 設定ファイル
 
-設定ファイルは，デフォルトでは `albam.toml` です．
+プロジェクト設定ファイルは，デフォルトでは `albam.toml` です．
 
 ```toml
 title = "My Albums"
@@ -200,30 +242,165 @@ albam build --config albam.toml
 albam serve --config albam.toml
 ```
 
-## 画像ディレクトリ
+## テーマ設定
 
-画像は `albums/` 以下に配置します．
-
-```txt
-albums/
-├── weekend-trip/
-│   ├── IMG_001.jpg
-│   └── IMG_002.jpg
-└── coffee-time/
-    └── IMG_101.jpg
-```
-
-`albam` は画像ファイルの親ディレクトリをアルバムとして扱います．
+デフォルトテーマは `themes/default/` に配置されています．
 
 ```txt
-albums/weekend-trip/IMG_001.jpg
-  -> album: weekend-trip
+themes/default/
+├── theme.toml
+├── package.json
+├── astro.config.mjs
+└── src/
 ```
 
-現時点では，アルバムごとの `album.toml` は読み込まれません．
-アルバムタイトルはディレクトリ名から生成されます．
+`theme.toml` では，テーマの表示名，アクセントカラー，トップページの文言，グリッド列数，ヘッダー，フッター，favicon などを設定できます．
 
-対応している画像拡張子は次の通りです．
+```toml
+name = "default"
+title = "albam"
+
+[params]
+brand = "albam"
+accent = "coral"
+home_title = "My Albums"
+home_eyebrow = "SELF-HOSTED PHOTO ALBUM"
+home_description = "a simple folder-based album"
+album_grid_columns = 4
+photo_grid_columns = 5
+
+[params.nav]
+albums = "Albums"
+
+[params.header]
+enabled = true
+
+[params.footer]
+text = "© 2026 powell"
+powered_by = true
+
+[params.favicon]
+href = "/favicon.svg"
+type = "image/svg+xml"
+```
+
+主な設定項目は次の通りです．
+
+| key                         | 説明                                  |
+| --------------------------- | ------------------------------------- |
+| `name`                      | テーマ名                              |
+| `title`                     | サイトタイトル                        |
+| `params.brand`              | ヘッダー左上に表示するブランド名      |
+| `params.accent`             | アクセントカラー名                    |
+| `params.home_title`         | トップページの大きなタイトル          |
+| `params.home_eyebrow`       | トップページタイトル上の小さなラベル  |
+| `params.home_description`   | トップページの説明文                  |
+| `params.album_grid_columns` | トップページのアルバムグリッド列数    |
+| `params.photo_grid_columns` | アルバム詳細ページの写真グリッド列数  |
+| `params.nav.albums`         | ナビゲーションのアルバム一覧ラベル    |
+| `params.header.enabled`     | ヘッダーを表示するかどうか            |
+| `params.footer.text`        | フッターに表示するテキスト            |
+| `params.footer.powered_by`  | `Powered by albam` を表示するかどうか |
+| `params.favicon.href`       | favicon のパス                        |
+| `params.favicon.type`       | favicon の MIME type                  |
+
+`params.accent` には，次の値を指定できます．
+
+```txt
+pink
+coral
+mint
+blue
+lavender
+lemon
+red
+beige
+```
+
+たとえば，アクセントカラーを青系にする場合は，次のようにします．
+
+```toml
+[params]
+accent = "blue"
+```
+
+ブランド名を表示したくない場合は，`brand` を空文字にします．
+
+```toml
+[params]
+brand = ""
+```
+
+ヘッダー自体を非表示にする場合は，次のようにします．
+
+```toml
+[params.header]
+enabled = false
+```
+
+フッターの `Powered by albam` を非表示にする場合は，次のようにします．
+
+```toml
+[params.footer]
+powered_by = false
+```
+
+favicon を変更する場合は，`href` と `type` を指定します．
+
+```toml
+[params.favicon]
+href = "/favicon.svg"
+type = "image/svg+xml"
+```
+
+## テーマの開発とビルド
+
+`themes/default/package.json` には，Astro テーマ用の開発・ビルドコマンドが定義されています．
+
+```json
+{
+  "scripts": {
+    "dev": "astro dev --host 0.0.0.0",
+    "build": "astro build",
+    "preview": "astro preview --host 0.0.0.0"
+  }
+}
+```
+
+テーマを開発する場合は，次のようにします．
+
+```sh
+cd themes/default
+pnpm install
+pnpm dev
+```
+
+テーマをビルドする場合は，通常はプロジェクトルートから `albam build` を実行します．
+
+```sh
+albam build
+```
+
+手動で Astro のビルドだけを確認する場合は，テーマディレクトリで次を実行します．
+
+```sh
+cd themes/default
+pnpm build
+```
+
+`astro.config.mjs` では `output: "static"` が指定されており，デフォルトテーマは静的ファイルとしてビルドされます．ビルド後の成果物は，`albam build` によって `.albam/public/` に配置され，`albam serve` から配信されます．
+
+テーマを切り替える場合は，`albam.toml` の `[theme]` セクションを変更します．
+
+```toml
+[theme]
+name = "my-theme"
+dir = "themes/my-theme"
+```
+
+## 対応画像形式
+
+現在，次の拡張子の画像を対象にします．
 
 ```txt
 .jpg
@@ -232,208 +409,28 @@ albums/weekend-trip/IMG_001.jpg
 .webp
 ```
 
-## 基本的な使い方
+## コマンド概要
 
-### 1. プロジェクトを作成する
+`albam` には，主に次のコマンドがあります．
 
-```sh
-albam init my-album
-cd my-album
-```
+| command         | 説明                                                       |
+| --------------- | ---------------------------------------------------------- |
+| `albam init`    | 新しいアルバムプロジェクトを作成します                     |
+| `albam index`   | 画像ディレクトリを読み取り，アルバム・写真情報を保存します |
+| `albam build`   | Astro 製テーマをビルドします                               |
+| `albam serve`   | Web UI，API，画像ファイルを配信します                      |
+| `albam version` | バージョン情報を表示します                                 |
 
-カレントディレクトリを初期化する場合は，ディレクトリ引数を省略します．
+## API だけを起動する
 
-```sh
-albam init
-```
-
-テーマを取得しない場合は，`--no-theme` を使います．
-
-```sh
-albam init --no-theme
-```
-
-`init` で作成済みのファイルがある場合はエラーになります．上書きする場合は `--force` を使います．
-
-```sh
-albam init --force
-```
-
-### 2. インデックスを作成する
-
-画像ディレクトリを読み取り，アルバム・写真情報を SQLite に保存します．
-
-```sh
-albam index ./albums
-```
-
-`albam.toml` の `[media].source_dir` を使う場合は，ディレクトリ引数を省略できます．
-
-```sh
-albam index
-```
-
-実行例です．
-
-```txt
-indexed 2 albums and 3 assets, removed 0 assets
-```
-
-### 3. テーマをビルドする
-
-テーマをビルドし，`[build].out_dir` に出力します．
-
-```sh
-albam build
-```
-
-デフォルトでは，次のように出力されます．
-
-```txt
-themes/default -> .albam/public
-```
-
-テーマの依存関係が未インストールの場合は，先に次を実行してください．
-
-```sh
-cd themes/default
-pnpm install
-```
-
-### 4. サーバーを起動する
-
-API，画像，静的ファイルを配信します．
-
-```sh
-albam serve
-```
-
-デフォルトでは，次のアドレスで起動します．
-
-```txt
-http://127.0.0.1:8080
-```
-
-ホストやポートを指定する場合は，次のようにします．
-
-```sh
-albam serve --host 127.0.0.1 --port 8080
-```
-
-静的ファイルを配信せず，API と画像配信だけを起動する場合は，次を使います．
-
-```sh
-albam serve --api-only --port 8080
-```
-
-静的ファイルのディレクトリを指定する場合は，`--public-dir` を使います．
-
-```sh
-albam serve --public-dir .albam/public
-```
-
-## コマンド
-
-### `albam init`
-
-新しい `albam` プロジェクトを作成します．
-
-```sh
-albam init [--force] [--theme default] [--no-theme] [dir]
-```
-
-例です．
-
-```sh
-albam init my-album
-albam init
-albam init my-album --no-theme
-albam init my-album --force
-```
-
-現在サポートされているテーマ名は `default` のみです．
-
-```sh
-albam init --theme default
-```
-
-### `albam index`
-
-画像ディレクトリを読み取り，アルバム・写真情報を保存します．
-
-```sh
-albam index [--config path] [dir]
-```
-
-例です．
-
-```sh
-albam index ./albums
-albam index --config albam.toml
-```
-
-### `albam build`
-
-テーマをビルドします．
-
-```sh
-albam build [--config path]
-```
-
-例です．
-
-```sh
-albam build
-albam build --config albam.toml
-```
-
-### `albam serve`
-
-API，画像，静的ファイルを配信します．
-
-```sh
-albam serve [--config path] [--api-only] [--host host] [--port port] [--public-dir dir]
-```
-
-例です．
-
-```sh
-albam serve
-albam serve --api-only
-albam serve --host 127.0.0.1 --port 8080
-albam serve --public-dir .albam/public
-```
-
-### `albam version`
-
-バージョン情報を表示します．
-
-```sh
-albam version
-```
-
-詳細表示です．
-
-```sh
-albam version --verbose
-```
-
-`--version` でもバージョンを表示できます．
-
-```sh
-albam --version
-```
-
-## 開発時の使い方
-
-API だけを起動します．
+テーマ開発中は，Go サーバーを API と画像配信だけで起動できます．
 
 ```sh
 albam index ./albums
 albam serve --api-only --port 8080
 ```
 
-別ターミナルでテーマを開発します．
+別ターミナルで Astro の開発サーバーを起動します．
 
 ```sh
 cd themes/default
@@ -441,10 +438,38 @@ pnpm install
 pnpm dev
 ```
 
-ビルド済みテーマを使って確認する場合は，次の順に実行します．
+この使い方では，バックエンドとテーマを分けて開発できます．
+
+## 本番に近い確認をする
+
+ビルド済みテーマを Go サーバーから配信する場合は，次の順に実行します．
 
 ```sh
 albam index ./albums
 albam build
 albam serve
 ```
+
+本番運用では，`albam serve` を systemd などで常駐させ，Caddy や nginx などのリバースプロキシを前段に置く構成を想定しています．
+
+```txt
+Browser
+  -> Caddy / nginx
+  -> albam serve
+      -> static theme files
+      -> /api/*
+      -> /media/*
+```
+
+## 必要なもの
+
+`albam index` と `albam serve --api-only` を使うだけなら，Go 製バイナリだけで動作します．
+
+`albam build` を使う場合は，テーマディレクトリで `pnpm build` を実行するため，`pnpm` が必要です．
+
+```sh
+cd themes/default
+pnpm install
+```
+
+また，`go install` や手元ビルドで SQLite ドライバをビルドする場合，環境によっては C コンパイラが必要です．

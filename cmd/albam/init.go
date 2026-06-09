@@ -215,7 +215,7 @@ func installTheme(themeName string, dst string, force bool) error {
 
 func fetchLatestRelease() (githubRelease, error) {
 	client := &http.Client{Timeout: 30 * time.Second}
-	request, err := http.NewRequest(http.MethodGet, releaseURLForVersion(version), nil)
+	request, err := http.NewRequest(http.MethodGet, releaseURLForVersion(currentVersionInfo().Version), nil)
 	if err != nil {
 		return githubRelease{}, err
 	}
