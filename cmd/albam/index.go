@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -13,16 +14,28 @@ import (
 )
 
 func runIndex(args []string) error {
-	cfg, err := config.Load("albam.toml")
+	fs := newFlagSet("index", "usage: albam index [--config path] [dir]")
+
+	var configPath string
+	fs.StringVar(&configPath, "config", "albam.toml", "config file path")
+
+	if err := parseFlags(fs, args); err != nil {
+		if err == flag.ErrHelp {
+			return nil
+		}
+		return err
+	}
+
+	cfg, err := config.Load(configPath)
 	if err != nil {
 		return err
 	}
 
 	root := cfg.Media.SourceDir
-	if len(args) == 1 {
-		root = args[0]
-	} else if len(args) > 1 {
-		return fmt.Errorf("usage: albam index [dir]")
+	if fs.NArg() == 1 {
+		root = fs.Arg(0)
+	} else if fs.NArg() > 1 {
+		return fmt.Errorf("usage: albam index [--config path] [dir]")
 	}
 
 	files, err := scanner.Scan(root)

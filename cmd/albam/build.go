@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -11,11 +12,22 @@ import (
 )
 
 func runBuild(args []string) error {
-	if len(args) > 0 {
-		return fmt.Errorf("usage: albam build")
+	fs := newFlagSet("build", "usage: albam build [--config path]")
+
+	var configPath string
+	fs.StringVar(&configPath, "config", "albam.toml", "config file path")
+
+	if err := parseFlags(fs, args); err != nil {
+		if err == flag.ErrHelp {
+			return nil
+		}
+		return err
+	}
+	if fs.NArg() != 0 {
+		return fmt.Errorf("usage: albam build [--config path]")
 	}
 
-	cfg, err := config.Load("albam.toml")
+	cfg, err := config.Load(configPath)
 	if err != nil {
 		return err
 	}

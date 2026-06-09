@@ -15,8 +15,7 @@ import (
 )
 
 func runServe(args []string) error {
-	fs := flag.NewFlagSet("serve", flag.ContinueOnError)
-	fs.SetOutput(os.Stderr)
+	fs := newFlagSet("serve", "usage: albam serve [--config path] [--api-only] [--host host] [--port port] [--public-dir dir]")
 
 	var (
 		configPath string
@@ -32,11 +31,14 @@ func runServe(args []string) error {
 	fs.StringVar(&publicDir, "public-dir", "", "static public directory")
 	fs.BoolVar(&apiOnly, "api-only", false, "serve only API and media routes")
 
-	if err := fs.Parse(args); err != nil {
+	if err := parseFlags(fs, args); err != nil {
+		if err == flag.ErrHelp {
+			return nil
+		}
 		return err
 	}
 	if fs.NArg() != 0 {
-		return fmt.Errorf("usage: albam serve [--api-only] [--host host] [--port port] [--public-dir dir]")
+		return fmt.Errorf("usage: albam serve [--config path] [--api-only] [--host host] [--port port] [--public-dir dir]")
 	}
 
 	cfg, err := config.Load(configPath)

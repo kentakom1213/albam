@@ -32,35 +32,35 @@ CLI は次の思想で設計します．
 
 ```txt
 albam init      プロジェクトを作る
-albam scan      画像ファイルを確認する
 albam index     アルバム・写真情報を保存する
 albam build     Astro テーマを静的ファイルとしてビルドする
 albam serve     Go サーバーとして公開する
+albam version   バージョン情報を表示する
 albam doctor    設定や依存関係を確認する
 ```
 
-MVP では，まず次の 4 つを実装対象にします．
+MVP では，まず次のコマンドを実装対象にします．
 
 ```txt
-albam init
-albam scan
 albam index
+albam build
 albam serve
+albam version
 ```
 
-`albam build` は，Astro テーマを Go サーバーから配信する段階で追加します．
+`albam index` は，画像ディレクトリのスキャンとメタデータ保存をまとめて行います．
 `albam doctor` は，運用時の確認用として後から追加します．
 
 ## コマンド一覧
 
 ```txt
 albam init [dir]
-albam scan [dir]
-albam index [dir]
-albam build
-albam serve
-albam doctor
+albam index [--config <path>] [dir]
+albam build [--config <path>]
+albam serve [--config <path>] [--host <host>] [--port <port>] [--public-dir <path>] [--api-only]
 albam version
+albam version --verbose
+albam doctor
 ```
 
 ## 共通オプション
@@ -68,17 +68,19 @@ albam version
 すべてのサブコマンドで共通して利用できるオプションです．
 
 ```txt
--c, --config <path>     設定ファイルのパス
--v, --verbose           詳細ログを表示する
--q, --quiet             通常ログを抑制する
--h, --help              ヘルプを表示する
+--config <path>     設定ファイルのパス
+--verbose           詳細ログを表示する
+--quiet             通常ログを抑制する
+--help              ヘルプを表示する
 ```
+
+オプションは `--option` 形式に統一します．`-option` 形式は使用しません．
 
 例:
 
 ```sh
 albam serve --config albam.toml
-albam index ./albums --verbose
+albam index --config albam.toml ./albums
 ```
 
 ## ディレクトリ構成
@@ -221,80 +223,12 @@ albam init my-album --theme default
 `--force` は既存ファイルを上書きする可能性があります．
 MVP では，既存の `albam.toml` がある場合はエラーにするのが安全です．
 
-## albam scan
-
-画像ディレクトリを再帰的に読み取り，認識できる画像ファイルを列挙します．
-
-```txt
-albam scan [dir]
-```
-
-### 用途
-
-DB への保存は行わず，どの画像が対象として認識されるかを確認します．
-バックエンド実装の最初のゴールとして，`albam scan ./albums` で画像ファイル一覧を出す方針でした
-
-### 例
-
-```sh
-albam scan ./albums
-```
-
-出力例:
-
-```txt
-weekend-trip/IMG_001.jpg
-weekend-trip/IMG_002.jpg
-coffee-time/IMG_101.jpg
-```
-
-### 対応拡張子
-
-MVP では次を対象にします．
-
-```txt
-.jpg
-.jpeg
-.png
-.webp
-```
-
-### オプション
-
-```txt
---json                JSON 形式で出力する
---include-hidden      隠しディレクトリを対象に含める
---follow-symlinks     シンボリックリンクをたどる
-```
-
-### JSON 出力例
-
-```json
-{
-  "files": [
-    {
-      "path": "/home/user/albam/albums/weekend-trip/IMG_001.jpg",
-      "rel_path": "weekend-trip/IMG_001.jpg",
-      "filename": "IMG_001.jpg",
-      "ext": ".jpg",
-      "size": 2458123,
-      "mod_time": "2026-05-18T10:30:00+09:00"
-    }
-  ]
-}
-```
-
-### 注意
-
-`scan` は読み取り専用です．
-DB，キャッシュ，テーマ出力は変更しません．
-
 ## albam index
 
 画像ディレクトリをスキャンし，アルバム・写真情報を保存します．
 
 ```txt
-albam index [dir]
+albam index [--config <path>] [dir]
 ```
 
 ### 用途
@@ -328,6 +262,7 @@ albam index
 ### オプション
 
 ```txt
+--config <path>        設定ファイルのパス
 --dry-run             保存せず，変更予定だけ表示する
 --reset               既存インデックスを削除して作り直す
 --json                結果を JSON で出力する
@@ -365,7 +300,7 @@ Removed photos: 1
 Astro 製テーマを静的ファイルとしてビルドします．
 
 ```txt
-albam build
+albam build [--config <path>]
 ```
 
 ### 用途
@@ -384,7 +319,7 @@ albam build
 ### 挙動
 
 ```txt
-1. albam.toml を読み込む
+1. 設定ファイルを読み込む
 2. theme.dir を確認する
 3. Astro テーマの依存関係を確認する
 4. テーマをビルドする
@@ -394,17 +329,14 @@ albam build
 ### オプション
 
 ```txt
---theme <name>        使用するテーマ名
---theme-dir <path>    テーマディレクトリを直接指定する
---out-dir <path>      出力先を指定する
---clean               出力先を削除してからビルドする
+--config <path>       設定ファイルのパス
 ```
 
 ### 実行例
 
 ```sh
-albam build --theme default
-albam build --clean
+albam build
+albam build --config albam.toml
 ```
 
 ### 内部で実行する処理
@@ -438,7 +370,7 @@ Run:
 Go 製 HTTP サーバーを起動します．
 
 ```txt
-albam serve
+albam serve [--config <path>] [--host <host>] [--port <port>] [--public-dir <path>] [--api-only]
 ```
 
 ### 用途
@@ -663,9 +595,10 @@ thumbnail: generated .albam/cache/thumbs/img-001.webp
 最初の MVP では，次を実装します．
 
 ```txt
-albam scan [dir]
-albam index [dir]
+albam index [--config <path>] [dir]
+albam build [--config <path>]
 albam serve
+albam version
 ```
 
 できれば `albam init` も入れます．
@@ -679,24 +612,23 @@ MVP では後回しでよいもの:
 ```txt
 albam build
 albam doctor
-albam version --verbose
 albam serve --watch
 ```
 
 理由は，まず Go 側で画像を読み，アルバム情報を返し，API と画像配信が動くことを優先するためです．
-バックエンド実装の段階的な計画でも，最初は `scan`，次に `index`，その後 `serve` で API を公開する流れになっています
+`index` が画像ディレクトリのスキャンと DB 保存をまとめて担当し，その後 `serve` で API を公開します．
 
 ## 実装順
 
 実装順は次がよいです．
 
 ```txt
-1. albam scan [dir]
-2. albam index [dir]
-3. albam serve --api-only
-4. albam serve
-5. albam init [dir]
-6. albam build
+1. albam index [--config <path>] [dir]
+2. albam serve --api-only
+3. albam serve
+4. albam build
+5. albam version
+6. albam init [dir]
 7. albam doctor
 8. albam serve --watch
 ```

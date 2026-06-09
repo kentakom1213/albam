@@ -7,7 +7,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: albam <command> [args]")
+		printRootUsage(os.Stderr)
 		os.Exit(1)
 	}
 
@@ -15,8 +15,10 @@ func main() {
 	args := os.Args[2:]
 
 	switch cmd {
-	case "scan":
-		if err := runScan(args); err != nil {
+	case "--help", "help":
+		printRootUsage(os.Stdout)
+	case "--version":
+		if err := runVersion(nil); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
@@ -35,8 +37,25 @@ func main() {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
+	case "version":
+		if err := runVersion(args); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n", cmd)
 		os.Exit(1)
 	}
+}
+
+func printRootUsage(out *os.File) {
+	fmt.Fprintln(out, `usage: albam <command> [args]
+
+Commands:
+  index     index albums and photos
+  build     build the theme
+  serve     serve API, media, and static files
+  version   print version information
+
+Options use the --option form.`)
 }
