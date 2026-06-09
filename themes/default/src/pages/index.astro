@@ -1,14 +1,16 @@
 ---
 import Layout from "../components/Layout.astro";
-import { getThemeConfig } from "../lib/theme-config";
+import { formatPageTitle, getThemeConfig } from "../lib/theme-config";
 
 const theme = getThemeConfig();
+const titlePrefix = theme.brand === "" ? "" : theme.siteTitle;
+const homeTitleLength = Math.max(Array.from(theme.homeTitle).length, 1);
 ---
 
-<Layout title={`${theme.siteTitle} | ${theme.homeTitle}`}>
+<Layout title={formatPageTitle(titlePrefix, theme.homeTitle)}>
   <main
     class="page-shell home-page"
-    style={`--album-grid-columns: ${theme.layout.albumGridColumns}; --album-grid-columns-tablet: ${theme.layout.albumGridColumnsTablet}; --album-grid-columns-mobile: ${theme.layout.albumGridColumnsMobile};`}
+    style={`--album-grid-columns: ${theme.layout.albumGridColumns}; --album-grid-columns-tablet: ${theme.layout.albumGridColumnsTablet}; --album-grid-columns-mobile: ${theme.layout.albumGridColumnsMobile}; --home-title-length: ${homeTitleLength};`}
   >
     <section class="home-hero" aria-labelledby="home-title">
       <div class="hero-copy">
@@ -306,9 +308,9 @@ const theme = getThemeConfig();
 
   .hero-copy {
     display: grid;
-    grid-template-columns: minmax(440px, 460px) minmax(0, 1fr);
+    grid-template-columns: fit-content(72%) minmax(280px, 1fr);
     align-items: end;
-    column-gap: 44px;
+    column-gap: clamp(24px, calc(56px - var(--home-title-length) * 1px), 44px);
   }
 
   .desktop-eyebrow {
@@ -328,8 +330,9 @@ const theme = getThemeConfig();
     grid-column: 2;
     grid-row: 2;
     align-self: end;
-    max-width: 740px;
-    padding-bottom: 2px;
+    max-width: clamp(420px, calc(920px - var(--home-title-length) * 24px), 740px);
+    padding-bottom: clamp(2px, calc(var(--home-title-length) * 0.5px), 14px);
+    font-size: clamp(18px, calc(29px - var(--home-title-length) * 0.4px), 24px);
   }
 
   .mobile-eyebrow,

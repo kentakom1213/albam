@@ -115,8 +115,12 @@ export function getThemeConfig(): ThemeConfig {
   };
 }
 
+export function formatPageTitle(...parts: string[]) {
+  return parts.filter((part) => part !== "").join(" | ");
+}
+
 function stringValue(value: unknown, fallback: string) {
-  return typeof value === "string" && value !== "" ? value : fallback;
+  return typeof value === "string" ? value : fallback;
 }
 
 function numberValue(value: unknown, fallback: number, min: number, max: number) {

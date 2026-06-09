@@ -147,6 +147,7 @@ dir = "themes/default"
 
 テーマに依存する表示文言は，テーマディレクトリ内の `themes/default/theme.toml` に書きます．
 `albam build` で Astro テーマを静的ビルドすると，その時点の値が HTML に埋め込まれます．
+文字列設定に空文字列を指定した場合は，デフォルト値へフォールバックせず，空の表示として扱われます．
 
 ```toml
 name = "default"

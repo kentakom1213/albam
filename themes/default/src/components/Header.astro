@@ -2,13 +2,18 @@
 import { getThemeConfig } from "../lib/theme-config";
 
 const theme = getThemeConfig();
+const hasBrand = theme.brand !== "";
 ---
 
 <header class="site-header">
-  <a class="brand" href="/" aria-label={`${theme.brand} home`}>
-    <span>{theme.brand}</span>
-    <span class="brand-dot" aria-hidden="true"></span>
-  </a>
+  {
+    hasBrand && (
+      <a class="brand" href="/" aria-label={`${theme.brand} home`}>
+        <span>{theme.brand}</span>
+        <span class="brand-dot" aria-hidden="true"></span>
+      </a>
+    )
+  }
 
   <div class="header-actions">
     <nav class="site-nav" aria-label="Primary navigation">
@@ -53,6 +58,7 @@ const theme = getThemeConfig();
     display: flex;
     align-items: center;
     gap: 24px;
+    margin-left: auto;
   }
 
   .site-nav {

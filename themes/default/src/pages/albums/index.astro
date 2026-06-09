@@ -1,14 +1,15 @@
 ---
 import Layout from "../../components/Layout.astro";
-import { getThemeConfig } from "../../lib/theme-config";
+import { formatPageTitle, getThemeConfig } from "../../lib/theme-config";
 
 const theme = getThemeConfig();
+const titlePrefix = theme.brand === "" ? "" : theme.siteTitle;
 ---
 
-<Layout title={`${theme.siteTitle} | Album`}>
+<Layout title={formatPageTitle(titlePrefix, "Album")}>
   <main
     class="page-shell detail-page"
-    data-site-title={theme.siteTitle}
+    data-site-title={titlePrefix}
     style={`--photo-grid-columns: ${theme.layout.photoGridColumns}; --photo-grid-columns-tablet: ${theme.layout.photoGridColumnsTablet}; --photo-grid-columns-mobile: ${theme.layout.photoGridColumnsMobile};`}
   >
     <div class="detail-topbar">
@@ -367,7 +368,7 @@ const theme = getThemeConfig();
       const visibleDate = formatCompactDate(album.date ?? album.newestTakenAt ?? album.createdAt);
       const shortDate = formatCompactMonth(album.date ?? album.newestTakenAt ?? album.createdAt);
 
-      document.title = `${siteTitle} | ${album.title}`;
+      document.title = [siteTitle, album.title].filter((part) => part !== "").join(" | ");
       renderBreadcrumbs(album);
       renderAlbumInfo(album, pagination.total);
       setText("#album-title", album.title);
