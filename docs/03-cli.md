@@ -54,7 +54,7 @@ albam version
 ## コマンド一覧
 
 ```txt
-albam init [dir]
+albam init [--force] [--theme default] [--no-theme] [dir]
 albam index [--config <path>] [dir]
 albam build [--config <path>]
 albam serve [--config <path>] [--host <host>] [--port <port>] [--public-dir <path>] [--api-only]
@@ -174,12 +174,13 @@ settings = "Settings"
 新しい `albam` プロジェクトを作成します．
 
 ```txt
-albam init [dir]
+albam init [--force] [--theme default] [--no-theme] [dir]
 ```
 
 ### 用途
 
 指定したディレクトリに，設定ファイル，画像ディレクトリ，キャッシュディレクトリ，テーマディレクトリを作成します．
+`dir` を省略した場合は，カレントディレクトリを初期化します．
 
 ### 例
 
@@ -199,28 +200,35 @@ albam init
 ```txt
 albam.toml
 albums/
+albums/sample.png
 themes/
+themes/default/
 .albam/
 ```
 
 ### オプション
 
 ```txt
---theme <name>        初期テーマ名
 --force               既存ファイルがあっても初期化する
+--theme default       インストールするテーマ
 --no-theme            テーマを作成しない
 ```
 
 ### 例
 
 ```sh
-albam init --theme default
-albam init my-album --theme default
+albam init
+albam init my-album
+albam init --no-theme my-album
 ```
 
 ### 注意
 
 `--force` は既存ファイルを上書きする可能性があります．
+`themes/default` は，GitHub Release asset の `albam-theme-default_<version>.tar.gz` から取得します．
+リリース版の CLI では同じ version tag の Release を使い，`dev` ビルドでは latest Release を使います．
+`checksums.txt` が Release に含まれる場合は，テーマ tarball の SHA256 を検証します．
+ネットワークに接続できない場合や，リリースが存在しない場合は失敗します．
 MVP では，既存の `albam.toml` がある場合はエラーにするのが安全です．
 
 ## albam index
@@ -601,12 +609,6 @@ albam serve
 albam version
 ```
 
-できれば `albam init` も入れます．
-
-```txt
-albam init [dir]
-```
-
 MVP では後回しでよいもの:
 
 ```txt
@@ -628,7 +630,7 @@ albam serve --watch
 3. albam serve
 4. albam build
 5. albam version
-6. albam init [dir]
+6. albam init [--force] [--theme default] [--no-theme] [dir]
 7. albam doctor
 8. albam serve --watch
 ```

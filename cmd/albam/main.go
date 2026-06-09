@@ -22,6 +22,11 @@ func main() {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
+	case "init":
+		if err := runInit(args); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 	case "index":
 		if err := runIndex(args); err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -52,6 +57,7 @@ func printRootUsage(out *os.File) {
 	fmt.Fprintln(out, `usage: albam <command> [args]
 
 Commands:
+  init      create a new albam project
   index     index albums and photos
   build     build the theme
   serve     serve API, media, and static files
