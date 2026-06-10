@@ -32,12 +32,9 @@ func runBuild(args []string) error {
 		return err
 	}
 
-	themeDir := cfg.Theme.Dir
+	themeDir := config.ResolveThemeDir(cfg)
 	outDir := cfg.Build.OutDir
 
-	if themeDir == "" {
-		themeDir = "themes/default"
-	}
 	if outDir == "" {
 		outDir = ".albam/public"
 	}
@@ -46,7 +43,22 @@ func runBuild(args []string) error {
 		return err
 	}
 
-	if err := runPnpmBuild(themeDir); err != nil {
+	payload, err := config.BuildThemePayload(cfg)
+	if err != nil {
+		return err
+	}
+
+	themeConfigFile := filepath.Join(".albam", "generated", "theme.json")
+	if err := config.WriteThemePayload(themeConfigFile, payload); err != nil {
+		return err
+	}
+
+	themeConfigFile, err = filepath.Abs(themeConfigFile)
+	if err != nil {
+		return err
+	}
+
+	if err := runPnpmBuild(themeDir, themeConfigFile); err != nil {
 		return err
 	}
 
@@ -60,9 +72,10 @@ func runBuild(args []string) error {
 	return nil
 }
 
-func runPnpmBuild(themeDir string) error {
+func runPnpmBuild(themeDir string, themeConfigFile string) error {
 	cmd := exec.Command("pnpm", "build")
 	cmd.Dir = themeDir
+	cmd.Env = append(os.Environ(), "ALBAM_THEME_CONFIG_FILE="+themeConfigFile)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -77,6 +90,11 @@ func ensureThemeReady(themeDir string) error {
 	packageJSON := filepath.Join(themeDir, "package.json")
 	if _, err := os.Stat(packageJSON); err != nil {
 		return fmt.Errorf("theme package.json not found: %s", packageJSON)
+	}
+
+	themeManifest := filepath.Join(themeDir, "theme.toml")
+	if _, err := os.Stat(themeManifest); err != nil {
+		return fmt.Errorf("theme manifest not found: %s", themeManifest)
 	}
 
 	nodeModules := filepath.Join(themeDir, "node_modules")

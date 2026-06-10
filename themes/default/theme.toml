@@ -1,24 +1,26 @@
-title = "albam"
+name = "default"
+display_name = "Default"
+version = "0.1.0"
+author = "kentakom1213"
+description = "Default theme for Albam"
 
-[params]
-brand = "albam"
+[defaults.appearance]
 accent = "coral"
+
+[defaults.layout]
+photo_grid = "justified"
+album_grid_columns = 4
+
+[defaults.features]
+show_header = true
+show_footer = true
+show_tags = true
+show_album_count = true
+
+[defaults.content]
+brand = "albam"
 home_title = "My Albums"
 home_eyebrow = "SELF-HOSTED PHOTO ALBUM"
 home_description = "a simple folder-based album"
-album_grid_columns = 4
-photo_grid_columns = 5
-
-[params.nav]
-albums = "Albums"
-
-[params.header]
-enabled = true
-
-[params.footer]
-text = "© 2026 powell"
-powered_by = true
-
-[params.favicon]
-href = "/favicon.svg"
-type = "image/svg+xml"
+copyright = ""
+footer_text = ""

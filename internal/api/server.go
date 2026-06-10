@@ -8,14 +8,23 @@ import (
 )
 
 type Server struct {
-	store *storage.Storage
-	cfg   config.Config
+	store      *storage.Storage
+	cfg        config.Config
+	configPath string
 }
 
 func NewServer(store *storage.Storage, cfg config.Config) *Server {
 	return &Server{
 		store: store,
 		cfg:   cfg,
+	}
+}
+
+func NewServerWithConfigPath(store *storage.Storage, cfg config.Config, configPath string) *Server {
+	return &Server{
+		store:      store,
+		cfg:        cfg,
+		configPath: configPath,
 	}
 }
 
@@ -41,6 +50,7 @@ func (s *Server) RoutesWithStatic(publicDir string) (http.Handler, error) {
 
 func (s *Server) registerDynamicRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/config", s.handleGetConfig)
+	mux.HandleFunc("/theme/runtime.css", s.handleRuntimeCSS)
 	mux.HandleFunc("/api/albums", s.handleListAlbums)
 	mux.HandleFunc("/api/albums/", s.handleAlbumSubroutes)
 	mux.HandleFunc("/api/photos/", s.handlePhotoSubroutes)

@@ -1,5 +1,4 @@
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
 
 export type ThemeConfig = {
   siteTitle: string;
@@ -16,56 +15,52 @@ export type ThemeConfig = {
     albumGridColumns: number;
     albumGridColumnsTablet: number;
     albumGridColumnsMobile: number;
-    photoGridColumns: number;
-    photoGridColumnsTablet: number;
-    photoGridColumnsMobile: number;
   };
-  nav: {
-    albums: string;
-  };
-  header: {
-    enabled: boolean;
+  features: {
+    showHeader: boolean;
+    showFooter: boolean;
+    showTags: boolean;
+    showAlbumCount: boolean;
   };
   footer: {
+    copyright: string;
     text: string;
-    poweredBy: boolean;
-  };
-  favicon: {
-    href: string;
-    type: string;
   };
 };
 
-type AccentName = "pink" | "coral" | "mint" | "blue" | "lavender" | "lemon" | "red" | "beige";
+type AccentName = "pink" | "coral" | "mint" | "blue" | "lavender" | "lemon" | "red" | "sakura";
 
-type RawThemeConfig = {
-  title?: string;
-  params?: {
-    brand?: string;
-    accent?: string;
-    home_title?: string;
-    home_eyebrow?: string;
-    home_description?: string;
-    album_grid_columns?: number;
-    photo_grid_columns?: number;
-    nav?: {
-      albums?: string;
-    };
-    header?: {
-      enabled?: boolean;
-    };
-    footer?: {
-      text?: string;
-      powered_by?: boolean;
-    };
-    favicon?: {
-      href?: string;
-      type?: string;
-    };
+type RawThemePayload = {
+  site?: {
+    title?: unknown;
+  };
+  theme?: {
+    params?: RawThemeParams;
   };
 };
 
-type TomlObject = Record<string, string | number | boolean | TomlObject>;
+type RawThemeParams = {
+  appearance?: {
+    accent?: unknown;
+  };
+  layout?: {
+    album_grid_columns?: unknown;
+  };
+  features?: {
+    show_header?: unknown;
+    show_footer?: unknown;
+    show_tags?: unknown;
+    show_album_count?: unknown;
+  };
+  content?: {
+    brand?: unknown;
+    home_title?: unknown;
+    home_eyebrow?: unknown;
+    home_description?: unknown;
+    copyright?: unknown;
+    footer_text?: unknown;
+  };
+};
 
 const accents: Record<AccentName, { color: string; soft: string }> = {
   pink: { color: "#ff6fae", soft: "#ffe3ef" },
@@ -75,15 +70,15 @@ const accents: Record<AccentName, { color: string; soft: string }> = {
   lavender: { color: "#9b7cff", soft: "#eee8ff" },
   lemon: { color: "#f4c430", soft: "#fff5c7" },
   red: { color: "#f04438", soft: "#ffe4e0" },
-  beige: { color: "#c88a5a", soft: "#f4e8dd" },
+  sakura: { color: "#ff6fae", soft: "#ffe3ef" },
 };
 
 const defaults: ThemeConfig = {
   siteTitle: "albam",
   brand: "albam",
   accent: {
-    name: "pink",
-    ...accents.pink,
+    name: "coral",
+    ...accents.coral,
   },
   homeTitle: "Your Albums",
   homeEyebrow: "SELF-HOSTED PHOTO ALBUM",
@@ -92,71 +87,74 @@ const defaults: ThemeConfig = {
     albumGridColumns: 5,
     albumGridColumnsTablet: 3,
     albumGridColumnsMobile: 2,
-    photoGridColumns: 6,
-    photoGridColumnsTablet: 3,
-    photoGridColumnsMobile: 2,
   },
-  nav: {
-    albums: "Albums",
-  },
-  header: {
-    enabled: true,
+  features: {
+    showHeader: true,
+    showFooter: true,
+    showTags: true,
+    showAlbumCount: true,
   },
   footer: {
+    copyright: "",
     text: "",
-    poweredBy: true,
-  },
-  favicon: {
-    href: "/favicon.svg",
-    type: "image/svg+xml",
   },
 };
 
 export function getThemeConfig(): ThemeConfig {
-  const raw = parseThemeToml(readFileSync(join(process.cwd(), "theme.toml"), "utf8"));
-  const params = raw.params ?? {};
-  const albumGridColumns = numberValue(params.album_grid_columns, defaults.layout.albumGridColumns, 1, 8);
-  const photoGridColumns = numberValue(params.photo_grid_columns, defaults.layout.photoGridColumns, 1, 10);
-  const accentName = accentValue(params.accent, defaults.accent.name);
+  const raw = loadRawThemePayload();
+  const params = raw.theme?.params ?? {};
+  const albumGridColumns = numberValue(params.layout?.album_grid_columns, defaults.layout.albumGridColumns, 1, 8);
+  const accentName = accentValue(params.appearance?.accent, defaults.accent.name);
   const accent = accents[accentName];
 
   return {
-    siteTitle: stringValue(raw.title, defaults.siteTitle),
-    brand: stringValue(params.brand, defaults.brand),
+    siteTitle: stringValue(raw.site?.title, defaults.siteTitle),
+    brand: stringValue(params.content?.brand, defaults.brand),
     accent: {
       name: accentName,
       ...accent,
     },
-    homeTitle: stringValue(params.home_title, defaults.homeTitle),
-    homeEyebrow: stringValue(params.home_eyebrow, defaults.homeEyebrow),
-    homeDescription: stringValue(params.home_description, defaults.homeDescription),
+    homeTitle: stringValue(params.content?.home_title, defaults.homeTitle),
+    homeEyebrow: stringValue(params.content?.home_eyebrow, defaults.homeEyebrow),
+    homeDescription: stringValue(params.content?.home_description, defaults.homeDescription),
     layout: {
       albumGridColumns,
       albumGridColumnsTablet: Math.min(albumGridColumns, defaults.layout.albumGridColumnsTablet),
       albumGridColumnsMobile: Math.min(albumGridColumns, defaults.layout.albumGridColumnsMobile),
-      photoGridColumns,
-      photoGridColumnsTablet: Math.min(photoGridColumns, defaults.layout.photoGridColumnsTablet),
-      photoGridColumnsMobile: Math.min(photoGridColumns, defaults.layout.photoGridColumnsMobile),
     },
-    nav: {
-      albums: stringValue(params.nav?.albums, defaults.nav.albums),
-    },
-    header: {
-      enabled: booleanValue(params.header?.enabled, defaults.header.enabled),
+    features: {
+      showHeader: booleanValue(params.features?.show_header, defaults.features.showHeader),
+      showFooter: booleanValue(params.features?.show_footer, defaults.features.showFooter),
+      showTags: booleanValue(params.features?.show_tags, defaults.features.showTags),
+      showAlbumCount: booleanValue(params.features?.show_album_count, defaults.features.showAlbumCount),
     },
     footer: {
-      text: stringValue(params.footer?.text, defaults.footer.text),
-      poweredBy: booleanValue(params.footer?.powered_by, defaults.footer.poweredBy),
-    },
-    favicon: {
-      href: stringValue(params.favicon?.href, defaults.favicon.href),
-      type: stringValue(params.favicon?.type, defaults.favicon.type),
+      copyright: stringValue(params.content?.copyright, defaults.footer.copyright),
+      text: stringValue(params.content?.footer_text, defaults.footer.text),
     },
   };
 }
 
 export function formatPageTitle(...parts: string[]) {
   return parts.filter((part) => part !== "").join(" | ");
+}
+
+export function siteTitlePrefix(theme: ThemeConfig) {
+  return theme.brand === "" ? "" : theme.siteTitle;
+}
+
+function loadRawThemePayload(): RawThemePayload {
+  const configFile = import.meta.env.ALBAM_THEME_CONFIG_FILE as string | undefined;
+  if (!configFile) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(readFileSync(configFile, "utf8")) as RawThemePayload;
+  } catch (error) {
+    console.error(error);
+    return {};
+  }
 }
 
 function stringValue(value: unknown, fallback: string) {
@@ -175,56 +173,4 @@ function booleanValue(value: unknown, fallback: boolean) {
 
 function accentValue(value: unknown, fallback: AccentName): AccentName {
   return typeof value === "string" && value in accents ? (value as AccentName) : fallback;
-}
-
-function parseThemeToml(source: string): RawThemeConfig {
-  const parsed: TomlObject = {};
-  let section: string[] = [];
-
-  for (const line of source.split(/\r?\n/)) {
-    const trimmed = line.trim();
-
-    if (!trimmed || trimmed.startsWith("#")) {
-      continue;
-    }
-
-    const sectionMatch = trimmed.match(/^\[([A-Za-z0-9_.-]+)\]$/);
-    if (sectionMatch) {
-      section = sectionMatch[1].split(".");
-      continue;
-    }
-
-    const stringMatch = trimmed.match(/^([A-Za-z0-9_-]+)\s*=\s*"((?:\\"|[^"])*)"$/);
-    if (stringMatch) {
-      assignValue(parsed, section, stringMatch[1], stringMatch[2].replace(/\\"/g, '"'));
-      continue;
-    }
-
-    const numberMatch = trimmed.match(/^([A-Za-z0-9_-]+)\s*=\s*([0-9]+)$/);
-    if (numberMatch) {
-      assignValue(parsed, section, numberMatch[1], Number.parseInt(numberMatch[2], 10));
-      continue;
-    }
-
-    const booleanMatch = trimmed.match(/^([A-Za-z0-9_-]+)\s*=\s*(true|false)$/);
-    if (booleanMatch) {
-      assignValue(parsed, section, booleanMatch[1], booleanMatch[2] === "true");
-    }
-  }
-
-  return parsed as RawThemeConfig;
-}
-
-function assignValue(target: TomlObject, section: string[], key: string, value: string | number | boolean) {
-  let current = target;
-
-  for (const segment of section) {
-    const next = current[segment];
-    if (!next || typeof next !== "object") {
-      current[segment] = {};
-    }
-    current = current[segment] as TomlObject;
-  }
-
-  current[key] = value;
 }

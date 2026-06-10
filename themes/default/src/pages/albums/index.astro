@@ -1,16 +1,15 @@
 ---
 import Layout from "../../components/Layout.astro";
-import { formatPageTitle, getThemeConfig } from "../../lib/theme-config";
+import { formatPageTitle, getThemeConfig, siteTitlePrefix } from "../../lib/theme-config";
 
 const theme = getThemeConfig();
-const titlePrefix = theme.brand === "" ? "" : theme.siteTitle;
+const titlePrefix = siteTitlePrefix(theme);
 ---
 
 <Layout title={formatPageTitle(titlePrefix, "Album")}>
   <main
     class="page-shell detail-page"
     data-site-title={titlePrefix}
-    style={`--photo-grid-columns: ${theme.layout.photoGridColumns}; --photo-grid-columns-tablet: ${theme.layout.photoGridColumnsTablet}; --photo-grid-columns-mobile: ${theme.layout.photoGridColumnsMobile};`}
   >
     <div class="detail-topbar">
       <nav class="breadcrumb" id="album-breadcrumbs" aria-label="Breadcrumb">
@@ -128,9 +127,10 @@ const titlePrefix = theme.brand === "" ? "" : theme.siteTitle;
   import { formatCompactDate, formatCompactMonth, getAlbum, getAlbumPhotosWithPagination, getApiConfig, getPhoto } from "../../lib/api";
   import type { Album, Breadcrumb, Photo, PhotoSort } from "../../lib/api";
   import { buildFixedRowLayout } from "../../lib/fixedRowLayout";
+  import { applyRuntimeContent, titlePrefix } from "../../lib/runtime-content";
 
   const tones = ["peach", "linen", "mint", "sky", "lilac", "lemon"] as const;
-  const siteTitle =
+  let siteTitle =
     document.querySelector<HTMLElement>(".detail-page")?.dataset.siteTitle ?? "albam";
   const photoGrid = document.querySelector<HTMLElement>("#photo-grid");
   const photoModal = document.querySelector<HTMLElement>("#photo-modal");
@@ -676,7 +676,13 @@ const titlePrefix = theme.brand === "" ? "" : theme.siteTitle;
     resizeObserver.observe(photoGrid);
   }
 
-  renderAlbum();
+  async function boot() {
+    const content = await applyRuntimeContent({ page: "album" });
+    siteTitle = titlePrefix(content, siteTitle);
+    await renderAlbum();
+  }
+
+  void boot();
 </script>
 
 <style>
@@ -764,7 +770,7 @@ const titlePrefix = theme.brand === "" ? "" : theme.siteTitle;
 
   .photo-grid:has(.loading-photo-card) {
     display: grid;
-    grid-template-columns: repeat(var(--photo-grid-columns), minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 10px;
   }
 
@@ -1355,7 +1361,7 @@ const titlePrefix = theme.brand === "" ? "" : theme.siteTitle;
 
   @media (max-width: 1120px) {
     .photo-grid:has(.loading-photo-card) {
-      grid-template-columns: repeat(var(--photo-grid-columns-tablet), minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 
@@ -1457,7 +1463,7 @@ const titlePrefix = theme.brand === "" ? "" : theme.siteTitle;
     }
 
     .photo-grid:has(.loading-photo-card) {
-      grid-template-columns: repeat(var(--photo-grid-columns-mobile), minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .photo-modal {

@@ -12,7 +12,6 @@ type Props = {
 const { title = "albam" } = Astro.props;
 const theme = getThemeConfig();
 const accentStyle = `--theme-current-accent: ${theme.accent.color}; --theme-current-accent-soft: ${theme.accent.soft};`;
-const hasFavicon = theme.favicon.href !== "";
 ---
 
 <!doctype html>
@@ -21,16 +20,13 @@ const hasFavicon = theme.favicon.href !== "";
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
-    {
-      hasFavicon && (
-        <link rel="icon" href={theme.favicon.href} type={theme.favicon.type || undefined} />
-      )
-    }
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/theme/runtime.css" />
     <title>{title}</title>
   </head>
   <body style={accentStyle}>
-    {theme.header.enabled && <Header />}
+    {theme.features.showHeader && <Header />}
     <slot />
-    <Footer />
+    {theme.features.showFooter && <Footer />}
   </body>
 </html>

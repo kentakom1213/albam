@@ -581,4 +581,21 @@ out_dir = ".albam/public"
 [theme]
 name = "default"
 dir = "themes/default"
+
+[theme.params.appearance]
+accent = "coral"
+
+[theme.params.layout]
+album_grid_columns = 4
+
+[theme.params.features]
+show_header = true
+show_footer = true
+
+[theme.params.content]
+brand = "albam"
+home_title = "My Albums"
+home_eyebrow = "SELF-HOSTED PHOTO ALBUM"
+home_description = "a simple folder-based album"
+copyright = "© 2026"
 `

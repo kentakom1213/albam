@@ -2,28 +2,23 @@
 import { getThemeConfig } from "../lib/theme-config";
 
 const theme = getThemeConfig();
+const hasCopyright = theme.footer.copyright !== "";
 const hasText = theme.footer.text !== "";
-const hasFooter = hasText || theme.footer.poweredBy;
+const hasAnyText = hasCopyright || hasText;
 ---
 
-{
-  hasFooter && (
-    <footer class="site-footer">
-      {hasText && <span>{theme.footer.text}</span>}
-      {hasText && theme.footer.poweredBy && <span class="footer-separator" aria-hidden="true">|</span>}
-      {
-        theme.footer.poweredBy && (
-          <span>
-            Powered by{" "}
-            <a href="https://github.com/kentakom1213/albam" rel="noreferrer" target="_blank">
-              albam
-            </a>
-          </span>
-        )
-      }
-    </footer>
-  )
-}
+<footer class="site-footer">
+  <span data-theme-footer-copyright hidden={!hasCopyright}>{theme.footer.copyright}</span>
+  <span class="footer-separator" data-theme-footer-content-separator aria-hidden="true" hidden={!(hasCopyright && hasText)}>|</span>
+  <span data-theme-footer-text hidden={!hasText}>{theme.footer.text}</span>
+  <span class="footer-separator" data-theme-footer-powered-separator aria-hidden="true" hidden={!hasAnyText}>|</span>
+  <span>
+    Powered by{" "}
+    <a href="https://github.com/kentakom1213/albam" rel="noreferrer" target="_blank">
+      albam
+    </a>
+  </span>
+</footer>
 
 <style>
   .site-footer {

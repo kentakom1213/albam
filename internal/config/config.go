@@ -1,7 +1,9 @@
 package config
 
 import (
+	"encoding/json"
 	"os"
+	"path/filepath"
 
 	"github.com/BurntSushi/toml"
 )
@@ -43,8 +45,32 @@ type BuildConfig struct {
 }
 
 type ThemeConfig struct {
-	Name string `toml:"name"`
-	Dir  string `toml:"dir"`
+	Name   string         `toml:"name"`
+	Dir    string         `toml:"dir"`
+	Params map[string]any `toml:"params"`
+}
+
+type ThemeManifest struct {
+	Name        string         `toml:"name"`
+	DisplayName string         `toml:"display_name"`
+	Version     string         `toml:"version"`
+	Author      string         `toml:"author"`
+	Description string         `toml:"description"`
+	Defaults    map[string]any `toml:"defaults"`
+}
+
+type ThemePayload struct {
+	Site  ThemePayloadSite  `json:"site"`
+	Theme ThemePayloadTheme `json:"theme"`
+}
+
+type ThemePayloadSite struct {
+	Title string `json:"title"`
+}
+
+type ThemePayloadTheme struct {
+	Name   string         `json:"name"`
+	Params map[string]any `json:"params"`
 }
 
 func Default() Config {
@@ -92,4 +118,112 @@ func Load(path string) (Config, error) {
 	}
 
 	return cfg, nil
+}
+
+func ResolveThemeDir(cfg Config) string {
+	if cfg.Theme.Dir != "" {
+		return cfg.Theme.Dir
+	}
+	if cfg.Theme.Name != "" {
+		return filepath.Join("themes", cfg.Theme.Name)
+	}
+	return filepath.Join("themes", "default")
+}
+
+func LoadThemeManifest(themeDir string) (ThemeManifest, error) {
+	var manifest ThemeManifest
+	path := filepath.Join(themeDir, "theme.toml")
+
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			return manifest, nil
+		}
+		return ThemeManifest{}, err
+	}
+
+	if _, err := toml.DecodeFile(path, &manifest); err != nil {
+		return ThemeManifest{}, err
+	}
+
+	return manifest, nil
+}
+
+func BuildThemePayload(cfg Config) (ThemePayload, error) {
+	manifest, err := LoadThemeManifest(ResolveThemeDir(cfg))
+	if err != nil {
+		return ThemePayload{}, err
+	}
+
+	params := cloneMap(manifest.Defaults)
+	mergeMap(params, cfg.Theme.Params)
+
+	themeName := cfg.Theme.Name
+	if themeName == "" {
+		themeName = manifest.Name
+	}
+	if themeName == "" {
+		themeName = "default"
+	}
+
+	return ThemePayload{
+		Site: ThemePayloadSite{
+			Title: cfg.Title,
+		},
+		Theme: ThemePayloadTheme{
+			Name:   themeName,
+			Params: params,
+		},
+	}, nil
+}
+
+func WriteThemePayload(path string, payload ThemePayload) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+
+	data, err := json.MarshalIndent(payload, "", "  ")
+	if err != nil {
+		return err
+	}
+	data = append(data, '\n')
+
+	return os.WriteFile(path, data, 0o644)
+}
+
+func cloneMap(source map[string]any) map[string]any {
+	target := map[string]any{}
+	for key, value := range source {
+		if nested, ok := asMap(value); ok {
+			target[key] = cloneMap(nested)
+			continue
+		}
+		target[key] = value
+	}
+	return target
+}
+
+func mergeMap(target map[string]any, source map[string]any) {
+	for key, value := range source {
+		sourceNested, sourceIsMap := asMap(value)
+		targetNested, targetIsMap := asMap(target[key])
+		if sourceIsMap && targetIsMap {
+			mergeMap(targetNested, sourceNested)
+			target[key] = targetNested
+			continue
+		}
+		if sourceIsMap {
+			target[key] = cloneMap(sourceNested)
+			continue
+		}
+		target[key] = value
+	}
+}
+
+func asMap(value any) (map[string]any, bool) {
+	switch typed := value.(type) {
+	case map[string]any:
+		return typed, true
+	default:
+		return nil, false
+	}
 }

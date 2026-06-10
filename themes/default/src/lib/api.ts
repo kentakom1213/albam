@@ -118,6 +118,16 @@ export type ApiConfig = {
   enableOriginalDownload: boolean;
 };
 
+export type RuntimeThemeContent = {
+  siteTitle: string;
+  brand: string;
+  homeTitle: string;
+  homeEyebrow: string;
+  homeDescription: string;
+  copyright: string;
+  footerText: string;
+};
+
 export type AlbumsResult = {
   albums: Album[];
   pagination: Pagination;
@@ -143,6 +153,22 @@ type PhotoResponse = {
 
 type ConfigResponse = {
   enable_original_download: boolean;
+  title?: unknown;
+  site?: {
+    title?: unknown;
+  };
+  theme?: {
+    params?: {
+      content?: {
+        brand?: unknown;
+        home_title?: unknown;
+        home_eyebrow?: unknown;
+        home_description?: unknown;
+        copyright?: unknown;
+        footer_text?: unknown;
+      };
+    };
+  };
 };
 
 type ApiErrorResponse = {
@@ -355,4 +381,23 @@ export async function getApiConfig(): Promise<ApiConfig> {
   return {
     enableOriginalDownload: body.enable_original_download,
   };
+}
+
+export async function getRuntimeThemeContent(): Promise<RuntimeThemeContent> {
+  const body = await request<ConfigResponse>("config");
+  const content = body.theme?.params?.content ?? {};
+
+  return {
+    siteTitle: stringValue(body.site?.title ?? body.title, "albam"),
+    brand: stringValue(content.brand, "albam"),
+    homeTitle: stringValue(content.home_title, "Your Albums"),
+    homeEyebrow: stringValue(content.home_eyebrow, "SELF-HOSTED PHOTO ALBUM"),
+    homeDescription: stringValue(content.home_description, "写真をディレクトリごとに，シンプルで可愛いグリッドとして眺められるアルバムです。"),
+    copyright: stringValue(content.copyright, ""),
+    footerText: stringValue(content.footer_text, ""),
+  };
+}
+
+function stringValue(value: unknown, fallback: string) {
+  return typeof value === "string" ? value : fallback;
 }

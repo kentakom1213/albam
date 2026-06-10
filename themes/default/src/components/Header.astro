@@ -4,22 +4,17 @@ import { getThemeConfig } from "../lib/theme-config";
 const theme = getThemeConfig();
 const brand = theme.brand;
 const hasBrand = brand !== "";
-const albumsLabel = theme.nav.albums;
 ---
 
 <header class="site-header">
-  {
-    hasBrand && (
-      <a class="brand" href="/" aria-label={`${brand} home`}>
-        <span>{brand}</span>
-        <span class="brand-dot" aria-hidden="true"></span>
-      </a>
-    )
-  }
+  <a class="brand" href="/" aria-label={`${brand} home`} data-theme-brand hidden={!hasBrand}>
+    <span data-theme-brand-text>{brand}</span>
+    <span class="brand-dot" aria-hidden="true"></span>
+  </a>
 
   <div class="header-actions">
     <nav class="site-nav" aria-label="Primary navigation">
-      <a class="active" href="/">{albumsLabel}</a>
+      <a class="active" href="/">Albums</a>
     </nav>
   </div>
 </header>

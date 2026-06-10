@@ -143,41 +143,56 @@ out_dir = ".albam/public"
 [theme]
 name = "default"
 dir = "themes/default"
+
+[theme.params.appearance]
+accent = "coral"
+
+[theme.params.layout]
+album_grid_columns = 4
+
+[theme.params.features]
+show_header = true
+show_footer = true
+
+[theme.params.content]
+brand = "albam"
+home_title = "My Albums"
+home_eyebrow = "SELF-HOSTED PHOTO ALBUM"
+home_description = "a simple folder-based album"
+copyright = "© 2026"
 ```
 
-テーマに依存する表示文言は，テーマディレクトリ内の `themes/default/theme.toml` に書きます．
-`albam build` で Astro テーマを静的ビルドすると，その時点の値が HTML に埋め込まれます．
+テーマに依存する設定のデフォルト値は，テーマ作者が管理する `themes/default/theme.toml` の `[defaults]` 以下に書きます．
+サイト所有者は，`albam.toml` の `[theme.params]` 以下に同じ構造で上書きを書きます．
+`albam build` は両者をマージし，`.albam/generated/theme.json` を生成して Astro テーマへ渡します．
+`albam serve` では，`appearance` のような見た目設定を `/theme/runtime.css` として動的に反映します．
+`content` の表示文言は `/api/config` からブラウザ側で読み込み，ページ読み込み時に動的に反映します．
 文字列設定に空文字列を指定した場合は，デフォルト値へフォールバックせず，空の表示として扱われます．
 
 ```toml
-name = "default"
-title = "albam"
-
-[params]
-brand = "albam"
+[theme.params.appearance]
 accent = "coral"
+
+[theme.params.layout]
+photo_grid = "justified"
+album_grid_columns = 4
+
+[theme.params.features]
+show_header = true
+show_footer = true
+show_tags = true
+show_album_count = true
+
+[theme.params.content]
+brand = "albam"
 home_title = "My Albums"
-home_eyebrow = "PHOTO ALBUM"
-home_description = "写真をディレクトリやタグごとに眺められるアルバムです。"
-album_grid_columns = 5
-photo_grid_columns = 6
-
-[params.nav]
-albums = "Albums"
-
-[params.header]
-enabled = true
-
-[params.footer]
-text = "© 2026 powell"
-powered_by = true
-
-[params.favicon]
-href = "/favicon.svg"
-type = "image/svg+xml"
+home_eyebrow = "SELF-HOSTED PHOTO ALBUM"
+home_description = "a simple folder-based album"
+copyright = "© 2026"
+footer_text = ""
 ```
 
-`accent` は，`pink`，`coral`，`mint`，`blue`，`lavender`，`lemon`，`red`，`beige` から選べます．
+`accent` は，`pink`，`coral`，`mint`，`blue`，`lavender`，`lemon`，`red`，`sakura` から選べます．
 
 ## albam init
 

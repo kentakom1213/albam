@@ -69,7 +69,7 @@ func runServe(args []string) error {
 		return err
 	}
 
-	server := api.NewServer(store, cfg)
+	server := api.NewServerWithConfigPath(store, cfg, configPath)
 
 	var handler http.Handler
 	if apiOnly {

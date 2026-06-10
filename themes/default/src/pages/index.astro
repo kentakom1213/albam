@@ -1,9 +1,9 @@
 ---
 import Layout from "../components/Layout.astro";
-import { formatPageTitle, getThemeConfig } from "../lib/theme-config";
+import { formatPageTitle, getThemeConfig, siteTitlePrefix } from "../lib/theme-config";
 
 const theme = getThemeConfig();
-const titlePrefix = theme.brand === "" ? "" : theme.siteTitle;
+const titlePrefix = siteTitlePrefix(theme);
 const homeTitleLength = Math.max(Array.from(theme.homeTitle).length, 1);
 ---
 
@@ -14,11 +14,11 @@ const homeTitleLength = Math.max(Array.from(theme.homeTitle).length, 1);
   >
     <section class="home-hero" aria-labelledby="home-title">
       <div class="hero-copy">
-        <p class="eyebrow desktop-eyebrow">{theme.homeEyebrow}</p>
-        <p class="eyebrow mobile-eyebrow">{theme.homeEyebrow}</p>
-        <h1 id="home-title" class="page-title">{theme.homeTitle}</h1>
-        <p class="lead desktop-lead">{theme.homeDescription}</p>
-        <p class="lead mobile-lead">{theme.homeDescription}</p>
+        <p class="eyebrow desktop-eyebrow" data-theme-home-eyebrow>{theme.homeEyebrow}</p>
+        <p class="eyebrow mobile-eyebrow" data-theme-home-eyebrow>{theme.homeEyebrow}</p>
+        <h1 id="home-title" class="page-title" data-theme-home-title>{theme.homeTitle}</h1>
+        <p class="lead desktop-lead" data-theme-home-description>{theme.homeDescription}</p>
+        <p class="lead mobile-lead" data-theme-home-description>{theme.homeDescription}</p>
       </div>
     </section>
 
@@ -72,6 +72,7 @@ const homeTitleLength = Math.max(Array.from(theme.homeTitle).length, 1);
 <script>
   import { getAlbumsWithPagination } from "../lib/api";
   import type { Album, AlbumSort } from "../lib/api";
+  import { applyRuntimeContent } from "../lib/runtime-content";
 
   const tones = ["peach", "linen", "mint", "sky", "lilac", "lemon"] as const;
   const albumGrid = document.querySelector<HTMLElement>("#album-grid");
@@ -286,7 +287,12 @@ const homeTitleLength = Math.max(Array.from(theme.homeTitle).length, 1);
 
   loadMoreAlbumsButton?.addEventListener("click", loadMoreAlbums);
 
-  renderHome();
+  async function boot() {
+    await applyRuntimeContent({ page: "home" });
+    await renderHome();
+  }
+
+  void boot();
 </script>
 
 <style>
