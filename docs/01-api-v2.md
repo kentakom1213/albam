@@ -194,7 +194,7 @@ MVP では，写真を 1 枚以上持つアルバムだけを返します．
 | -------- | ------ | ------: | ----------- |
 | `limit`  | number |    `50` | 取得件数    |
 | `offset` | number |     `0` | 開始位置    |
-| `sort`   | string | `date_desc` | 並び順      |
+| `sort`   | string | `date_asc` | 並び順      |
 
 `sort` は次を指定できます．
 
@@ -390,7 +390,7 @@ albums/
 | -------- | ------ | ------: | ----------- |
 | `limit`  | number |   `100` | 取得件数    |
 | `offset` | number |     `0` | 開始位置    |
-| `sort`   | string | `taken_at_desc` | 並び順 |
+| `sort`   | string | `taken_at_asc` | 並び順 |
 
 `sort` は次を指定できます．
 

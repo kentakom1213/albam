@@ -161,10 +161,10 @@ func albumFromRow(row storage.AlbumRow) Album {
 
 func parseAlbumSortQuery(r *http.Request) storage.AlbumSort {
 	switch r.URL.Query().Get("sort") {
-	case string(storage.AlbumSortDateAsc):
-		return storage.AlbumSortDateAsc
-	default:
+	case string(storage.AlbumSortDateDesc):
 		return storage.AlbumSortDateDesc
+	default:
+		return storage.AlbumSortDateAsc
 	}
 }
 

@@ -114,4 +114,19 @@ func TestHandleListAlbumsSortsByTakenAt(t *testing.T) {
 	if got := ascBody.Albums[0].Title; got != "Older" {
 		t.Fatalf("oldest album = %q, want Older", got)
 	}
+
+	recorder = httptest.NewRecorder()
+	request = httptest.NewRequest(http.MethodGet, "/api/albums", nil)
+	server.Routes().ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", recorder.Code, http.StatusOK)
+	}
+
+	var defaultBody AlbumsResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &defaultBody); err != nil {
+		t.Fatal(err)
+	}
+	if got := defaultBody.Albums[0].Title; got != "Older" {
+		t.Fatalf("default album = %q, want Older", got)
+	}
 }

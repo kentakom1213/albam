@@ -36,7 +36,7 @@ show_footer = true
 
 [theme.params.content]
 brand = "albam"
-home_title = "My Albums2"
+home_title = "My Albums"
 home_eyebrow = "SELF-HOSTED PHOTO ALBUM"
 home_description = "a simple folder-based album"
 copyright = "powell © 2026"

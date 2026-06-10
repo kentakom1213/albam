@@ -165,7 +165,7 @@ type Album = {
 | `offset` | number |         `0` | 開始位置             |
 | `tag`    | string |        なし | 指定タグで絞り込み   |
 | `q`      | string |        なし | タイトル・説明文検索 |
-| `sort`   | string | `date_desc` | 並び順               |
+| `sort`   | string | `date_asc` | 並び順               |
 
 `sort` は次を想定します．
 

@@ -329,7 +329,7 @@ export async function getAlbumsWithPagination(params: { limit?: number; offset?:
   const body = await request<AlbumsResponse>("albums", {
     limit: params.limit ?? 50,
     offset,
-    sort: params.sort ?? "date_desc",
+    sort: params.sort ?? "date_asc",
   });
 
   return {
@@ -356,7 +356,7 @@ export async function getAlbumPhotosWithPagination(
   const body = await request<PhotosResponse>(`albums/${albumId}/photos`, {
     limit: params.limit ?? 100,
     offset,
-    sort: params.sort ?? "taken_at_desc",
+    sort: params.sort ?? "taken_at_asc",
   });
 
   return {

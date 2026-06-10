@@ -57,10 +57,10 @@ func (s *Server) handleListAlbumPhotos(w http.ResponseWriter, r *http.Request, a
 
 func parsePhotoSortQuery(r *http.Request) storage.AssetSort {
 	switch r.URL.Query().Get("sort") {
-	case string(storage.AssetSortTakenAtAsc):
-		return storage.AssetSortTakenAtAsc
-	default:
+	case string(storage.AssetSortTakenAtDesc):
 		return storage.AssetSortTakenAtDesc
+	default:
+		return storage.AssetSortTakenAtAsc
 	}
 }
 

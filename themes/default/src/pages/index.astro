@@ -23,8 +23,8 @@ const homeTitleLength = Math.max(Array.from(theme.homeTitle).length, 1);
     </section>
 
     <div class="album-toolbar" aria-label="Album sorting">
-      <button class="chip active small" type="button" data-album-sort="date_desc">Newest</button>
-      <button class="chip small" type="button" data-album-sort="date_asc">Oldest</button>
+      <button class="chip small" type="button" data-album-sort="date_desc">Newest</button>
+      <button class="chip active small" type="button" data-album-sort="date_asc">Oldest</button>
     </div>
 
     <section class="album-grid" id="album-grid" aria-label="Albums">
@@ -79,7 +79,7 @@ const homeTitleLength = Math.max(Array.from(theme.homeTitle).length, 1);
   const loadMoreAlbumsButton = document.querySelector<HTMLButtonElement>("#load-more-albums");
   let loadedAlbumCount = 0;
   let hasMoreAlbums = false;
-  let currentAlbumSort: AlbumSort = "date_desc";
+  let currentAlbumSort: AlbumSort = "date_asc";
 
   function escapeHTML(value: string) {
     return value.replace(/[&<>"']/g, (char) => {

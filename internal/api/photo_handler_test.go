@@ -173,6 +173,21 @@ func TestHandleListAlbumPhotosSortsByTakenAt(t *testing.T) {
 	if got := ascBody.Photos[0].Filename; got != "PXL_20260402_030405000.jpg" {
 		t.Fatalf("oldest filename = %q, want PXL_20260402_030405000.jpg", got)
 	}
+
+	recorder = httptest.NewRecorder()
+	request = httptest.NewRequest(http.MethodGet, "/api/albums/"+albums[0].Slug+"/photos", nil)
+	server.Routes().ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", recorder.Code, http.StatusOK)
+	}
+
+	var defaultBody PhotosResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &defaultBody); err != nil {
+		t.Fatal(err)
+	}
+	if got := defaultBody.Photos[0].Filename; got != "PXL_20260402_030405000.jpg" {
+		t.Fatalf("default filename = %q, want PXL_20260402_030405000.jpg", got)
+	}
 }
 
 func TestHandleGetPhotoNotFound(t *testing.T) {
