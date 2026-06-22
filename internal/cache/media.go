@@ -12,8 +12,8 @@ func RemovePhotoVariantCaches(cacheRoot string, photoIDs []int64) error {
 		id := strconv.FormatInt(photoID, 10)
 
 		paths := []string{
-			filepath.Join(cacheRoot, "photos", "thumb", id+".jpg"),
-			filepath.Join(cacheRoot, "photos", "preview", id+".jpg"),
+			filepath.Join(cacheRoot, "media", "thumb", id+".webp"),
+			filepath.Join(cacheRoot, "media", "preview", id+".webp"),
 		}
 
 		for _, path := range paths {

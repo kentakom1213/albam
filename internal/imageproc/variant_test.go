@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"golang.org/x/image/webp"
 )
 
 func TestFitSize(t *testing.T) {
@@ -55,11 +57,11 @@ func TestFitSize(t *testing.T) {
 	}
 }
 
-func TestEnsureJPEGVariant(t *testing.T) {
+func TestEnsureWebPVariant(t *testing.T) {
 	dir := t.TempDir()
 
 	srcPath := filepath.Join(dir, "src.png")
-	dstPath := filepath.Join(dir, "cache", "thumb.jpg")
+	dstPath := filepath.Join(dir, "cache", "thumb.webp")
 
 	src := image.NewRGBA(image.Rect(0, 0, 100, 50))
 	for y := 0; y < 50; y++ {
@@ -80,7 +82,7 @@ func TestEnsureJPEGVariant(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	created, err := EnsureJPEGVariant(srcPath, dstPath, Options{
+	created, err := EnsureWebPVariant(srcPath, dstPath, Options{
 		MaxWidth:  25,
 		MaxHeight: 25,
 		Quality:   80,
@@ -100,7 +102,20 @@ func TestEnsureJPEGVariant(t *testing.T) {
 		t.Fatal("cached file is empty")
 	}
 
-	created, err = EnsureJPEGVariant(srcPath, dstPath, Options{
+	variant, err := os.Open(dstPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	config, err := webp.DecodeConfig(variant)
+	_ = variant.Close()
+	if err != nil {
+		t.Fatalf("decode cached webp: %v", err)
+	}
+	if config.Width != 25 || config.Height != 13 {
+		t.Fatalf("cached dimensions = %dx%d, want 25x13", config.Width, config.Height)
+	}
+
+	created, err = EnsureWebPVariant(srcPath, dstPath, Options{
 		MaxWidth:  25,
 		MaxHeight: 25,
 		Quality:   80,

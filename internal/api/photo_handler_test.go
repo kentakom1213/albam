@@ -29,7 +29,7 @@ func TestHandleGetPhoto(t *testing.T) {
 
 	server := NewServer(store, config.Config{})
 	recorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodGet, "/api/photos/"+assets[0].Slug, nil)
+	request := httptest.NewRequest(http.MethodGet, "/api/media/"+assets[0].Slug, nil)
 
 	server.Routes().ServeHTTP(recorder, request)
 
@@ -47,7 +47,7 @@ func TestHandleGetPhoto(t *testing.T) {
 	if body.Photo.AlbumID != albums[0].Slug {
 		t.Fatalf("album id = %q, want %q", body.Photo.AlbumID, albums[0].Slug)
 	}
-	if body.Photo.Links.Original != "/media/photos/"+assets[0].Slug+"/original" {
+	if body.Photo.Links.Original != "/media/"+assets[0].Slug+"/original" {
 		t.Fatalf("original link = %q", body.Photo.Links.Original)
 	}
 	if body.Photo.Width == nil || *body.Photo.Width != 1600 {
@@ -113,7 +113,7 @@ func TestHandleGetPhotoExposesGPSWhenConfigured(t *testing.T) {
 		},
 	})
 	recorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodGet, "/api/photos/"+assets[0].Slug, nil)
+	request := httptest.NewRequest(http.MethodGet, "/api/media/"+assets[0].Slug, nil)
 
 	server.Routes().ServeHTTP(recorder, request)
 
@@ -145,7 +145,7 @@ func TestHandleListAlbumPhotosSortsByTakenAt(t *testing.T) {
 	server := NewServer(store, config.Config{})
 
 	recorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodGet, "/api/albums/"+albums[0].Slug+"/photos?sort=taken_at_desc", nil)
+	request := httptest.NewRequest(http.MethodGet, "/api/albums/"+albums[0].Slug+"/media?sort=taken_at_desc", nil)
 	server.Routes().ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", recorder.Code, http.StatusOK)
@@ -160,7 +160,7 @@ func TestHandleListAlbumPhotosSortsByTakenAt(t *testing.T) {
 	}
 
 	recorder = httptest.NewRecorder()
-	request = httptest.NewRequest(http.MethodGet, "/api/albums/"+albums[0].Slug+"/photos?sort=taken_at_asc", nil)
+	request = httptest.NewRequest(http.MethodGet, "/api/albums/"+albums[0].Slug+"/media?sort=taken_at_asc", nil)
 	server.Routes().ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", recorder.Code, http.StatusOK)
@@ -175,7 +175,7 @@ func TestHandleListAlbumPhotosSortsByTakenAt(t *testing.T) {
 	}
 
 	recorder = httptest.NewRecorder()
-	request = httptest.NewRequest(http.MethodGet, "/api/albums/"+albums[0].Slug+"/photos", nil)
+	request = httptest.NewRequest(http.MethodGet, "/api/albums/"+albums[0].Slug+"/media", nil)
 	server.Routes().ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", recorder.Code, http.StatusOK)
@@ -195,7 +195,7 @@ func TestHandleGetPhotoNotFound(t *testing.T) {
 
 	server := NewServer(store, config.Config{})
 	recorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodGet, "/api/photos/missing-photo", nil)
+	request := httptest.NewRequest(http.MethodGet, "/api/media/missing-photo", nil)
 
 	server.Routes().ServeHTTP(recorder, request)
 

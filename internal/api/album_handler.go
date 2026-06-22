@@ -69,7 +69,7 @@ func (s *Server) handleAlbumSubroutes(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case len(parts) == 1:
 		s.handleGetAlbum(w, r, albumID)
-	case len(parts) == 2 && parts[1] == "photos":
+	case len(parts) == 2 && parts[1] == "media":
 		s.handleListAlbumPhotos(w, r, albumID)
 	default:
 		writeError(w, http.StatusNotFound, "not_found", "not found")
@@ -113,7 +113,7 @@ func albumFromRow(row storage.AlbumRow) Album {
 		id := row.CoverPhotoID.String
 		coverPhotoID = &id
 
-		url := "/media/photos/" + id + "/thumb"
+		url := "/media/" + id + "/thumb"
 		coverURL = &url
 	}
 
@@ -153,7 +153,7 @@ func albumFromRow(row storage.AlbumRow) Album {
 		Breadcrumbs:   []Breadcrumb{},
 		Links: AlbumLinks{
 			Self:   "/api/albums/" + row.Slug,
-			Photos: "/api/albums/" + row.Slug + "/photos",
+			Photos: "/api/albums/" + row.Slug + "/media",
 			Cover:  coverURL,
 		},
 	}

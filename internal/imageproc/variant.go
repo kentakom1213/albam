@@ -5,12 +5,12 @@ import (
 	"image"
 	"image/color"
 	_ "image/gif"
-	"image/jpeg"
 	_ "image/jpeg"
 	_ "image/png"
 	"os"
 	"path/filepath"
 
+	"github.com/gen2brain/webp"
 	xdraw "golang.org/x/image/draw"
 	_ "golang.org/x/image/webp"
 )
@@ -21,7 +21,7 @@ type Options struct {
 	Quality   int
 }
 
-func EnsureJPEGVariant(srcPath string, dstPath string, opts Options) (bool, error) {
+func EnsureWebPVariant(srcPath string, dstPath string, opts Options) (bool, error) {
 	opts = normalizeOptions(opts)
 
 	srcInfo, err := os.Stat(srcPath)
@@ -60,9 +60,9 @@ func EnsureJPEGVariant(srcPath string, dstPath string, opts Options) (bool, erro
 		_ = os.Remove(tmpPath)
 	}()
 
-	if err := jpeg.Encode(tmp, resized, &jpeg.Options{Quality: opts.Quality}); err != nil {
+	if err := webp.Encode(tmp, resized, webp.Options{Quality: opts.Quality}); err != nil {
 		_ = tmp.Close()
-		return false, fmt.Errorf("decode jpeg: %w", err)
+		return false, fmt.Errorf("encode webp: %w", err)
 	}
 	if err := tmp.Close(); err != nil {
 		return false, fmt.Errorf("close temp cache file: %w", err)
@@ -114,7 +114,7 @@ func resizeToFit(src image.Image, maxWidth, maxHeight int) image.Image {
 
 	dst := image.NewNRGBA(image.Rect(0, 0, dstW, dstH))
 
-	// JPEG は alpha を持てないので，透過 PNG / WebP は白背景に合成
+	// 配信用画像の背景色を入力形式にかかわらず統一する．
 	xdraw.Draw(dst, dst.Bounds(), &image.Uniform{C: color.White}, image.Point{}, xdraw.Src)
 	xdraw.ApproxBiLinear.Scale(dst, dst.Bounds(), src, bounds, xdraw.Over, nil)
 

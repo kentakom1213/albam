@@ -70,7 +70,7 @@ func (s *Server) handlePhotoSubroutes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rest := strings.TrimPrefix(r.URL.Path, "/api/photos/")
+	rest := strings.TrimPrefix(r.URL.Path, "/api/media/")
 	rest = strings.Trim(rest, "/")
 	if rest == "" || strings.Contains(rest, "/") {
 		writeError(w, http.StatusNotFound, "not_found", "not found")
@@ -131,10 +131,10 @@ func photoFromRow(row storage.AssetRow, albumID string, exposeGPS bool) Photo {
 		Orientation:         intPtrFromNullInt(row.Orientation),
 		Favorite:            false,
 		Links: PhotoLinks{
-			Self:     "/api/photos/" + photoID,
-			Thumb:    "/media/photos/" + photoID + "/thumb",
-			Preview:  "/media/photos/" + photoID + "/preview",
-			Original: "/media/photos/" + photoID + "/original",
+			Self:     "/api/media/" + photoID,
+			Thumb:    "/media/" + photoID + "/thumb",
+			Preview:  "/media/" + photoID + "/preview",
+			Original: "/media/" + photoID + "/original",
 		},
 	}
 }

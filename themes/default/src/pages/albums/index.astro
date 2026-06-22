@@ -165,7 +165,7 @@ const titlePrefix = siteTitlePrefix(theme);
 
   function currentPhotoId() {
     const parts = window.location.pathname.split("/").filter(Boolean);
-    return parts[0] === "albums" && parts[2] === "photos" ? decodeURIComponent(parts[3] ?? "") : "";
+    return parts[0] === "albums" && parts[2] === "media" ? decodeURIComponent(parts[3] ?? "") : "";
   }
 
   function albumPath(albumId: string) {
@@ -173,7 +173,7 @@ const titlePrefix = siteTitlePrefix(theme);
   }
 
   function photoPath(albumId: string, photoId: string) {
-    return `${albumPath(albumId)}photos/${encodeURIComponent(photoId)}/`;
+    return `${albumPath(albumId)}media/${encodeURIComponent(photoId)}/`;
   }
 
   function imageHTML(src: string | undefined, tone: Album["tone"], alt: string, collage = false) {

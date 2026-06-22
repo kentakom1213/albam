@@ -353,7 +353,7 @@ export async function getAlbumPhotosWithPagination(
   params: { limit?: number; offset?: number; sort?: PhotoSort } = {},
 ): Promise<AlbumPhotosResult> {
   const offset = params.offset ?? 0;
-  const body = await request<PhotosResponse>(`albums/${albumId}/photos`, {
+  const body = await request<PhotosResponse>(`albums/${albumId}/media`, {
     limit: params.limit ?? 100,
     offset,
     sort: params.sort ?? "taken_at_asc",
@@ -371,7 +371,7 @@ export async function getAlbumPhotos(albumId: string): Promise<Photo[]> {
 }
 
 export async function getPhoto(photoId: string): Promise<Photo> {
-  const body = await request<PhotoResponse>(`photos/${photoId}`);
+  const body = await request<PhotoResponse>(`media/${photoId}`);
   return toPhoto(body.photo);
 }
 

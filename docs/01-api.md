@@ -146,8 +146,8 @@ type Album = {
   ],
   "links": {
     "self": "/api/albums/weekend-trip",
-    "photos": "/api/albums/weekend-trip/photos",
-    "cover": "/media/photos/img-001/thumb"
+    "photos": "/api/albums/weekend-trip/media",
+    "cover": "/media/img-001/thumb"
   }
 }
 ```
@@ -200,8 +200,8 @@ updated_desc
       ],
       "links": {
         "self": "/api/albums/weekend-trip",
-        "photos": "/api/albums/weekend-trip/photos",
-        "cover": "/media/photos/img-001/thumb"
+        "photos": "/api/albums/weekend-trip/media",
+        "cover": "/media/img-001/thumb"
       }
     }
   ],
@@ -251,8 +251,8 @@ updated_desc
     ],
     "links": {
       "self": "/api/albums/weekend-trip",
-      "photos": "/api/albums/weekend-trip/photos",
-      "cover": "/media/photos/img-001/thumb"
+      "photos": "/api/albums/weekend-trip/media",
+      "cover": "/media/img-001/thumb"
     }
   }
 }
@@ -328,15 +328,15 @@ type Photo = {
     }
   ],
   "links": {
-    "self": "/api/photos/img-001",
-    "thumb": "/media/photos/img-001/thumb",
-    "preview": "/media/photos/img-001/preview",
-    "original": "/media/photos/img-001/original"
+    "self": "/api/media/img-001",
+    "thumb": "/media/img-001/thumb",
+    "preview": "/media/img-001/preview",
+    "original": "/media/img-001/original"
   }
 }
 ```
 
-## GET /api/albums/{album_id}/photos
+## GET /api/albums/{album_id}/media
 
 指定したアルバムに含まれる写真一覧を取得します．
 各アルバムページの写真グリッドで使用します．
@@ -383,10 +383,10 @@ filename_desc
         }
       ],
       "links": {
-        "self": "/api/photos/img-001",
-        "thumb": "/media/photos/img-001/thumb",
-        "preview": "/media/photos/img-001/preview",
-        "original": "/media/photos/img-001/original"
+        "self": "/api/media/img-001",
+        "thumb": "/media/img-001/thumb",
+        "preview": "/media/img-001/preview",
+        "original": "/media/img-001/original"
       }
     }
   ],
@@ -399,7 +399,7 @@ filename_desc
 }
 ```
 
-## GET /api/photos/{photo_id}
+## GET /api/media/{photo_id}
 
 指定した写真の詳細情報を取得します．
 写真詳細モーダルやライトボックスで使用します．
@@ -426,10 +426,10 @@ filename_desc
       }
     ],
     "links": {
-      "self": "/api/photos/img-001",
-      "thumb": "/media/photos/img-001/thumb",
-      "preview": "/media/photos/img-001/preview",
-      "original": "/media/photos/img-001/original"
+      "self": "/api/media/img-001",
+      "thumb": "/media/img-001/thumb",
+      "preview": "/media/img-001/preview",
+      "original": "/media/img-001/original"
     }
   }
 }
@@ -474,7 +474,7 @@ type Tag = {
 }
 ```
 
-## GET /media/photos/{photo_id}/thumb
+## GET /media/{photo_id}/thumb
 
 写真のサムネイル画像を取得します．
 写真グリッドで使用します．
@@ -487,31 +487,30 @@ type Tag = {
 
 ### Response
 
-画像バイナリを返します．
-MVP では JPEG または WebP を想定します．
+WebP画像を返します．
 
 ```txt
-Content-Type: image/jpeg
+Content-Type: image/webp
 Cache-Control: public, max-age=31536000, immutable
 ```
 
-## GET /media/photos/{photo_id}/preview
+## GET /media/{photo_id}/preview
 
 写真のプレビュー画像を取得します．
 ライトボックスや詳細ページで使用します．
 
 ```txt
-Content-Type: image/jpeg
+Content-Type: image/webp
 Cache-Control: public, max-age=31536000, immutable
 ```
 
-## GET /media/photos/{photo_id}/original
+## GET /media/{photo_id}/original
 
 オリジナル画像を取得します．
 ダウンロードや高解像度表示で使用します．
 
 ```txt
-Content-Type: image/jpeg
+Content-Type: 元画像のMIMEタイプ
 Cache-Control: private, max-age=3600
 ```
 
@@ -559,14 +558,14 @@ GET /api/tags
 
 ```txt
 GET /api/albums/{album_id}
-GET /api/albums/{album_id}/photos
+GET /api/albums/{album_id}/media
 ```
 
 用途:
 
 ```txt
-/api/albums/{album_id}        -> ヒーロー，説明，タグ，サイドバー
-/api/albums/{album_id}/photos -> 写真グリッド
+/api/albums/{album_id}       -> ヒーロー，説明，タグ，サイドバー
+/api/albums/{album_id}/media -> 写真グリッド
 ```
 
 ### 写真詳細モーダル
@@ -574,16 +573,16 @@ GET /api/albums/{album_id}/photos
 使用エンドポイント:
 
 ```txt
-GET /api/photos/{photo_id}
-GET /media/photos/{photo_id}/preview
+GET /api/media/{photo_id}
+GET /media/{photo_id}/preview
 ```
 
 用途:
 
 ```txt
-/api/photos/{photo_id}              -> メタデータ
-/media/photos/{photo_id}/preview    -> 表示画像
-/media/photos/{photo_id}/original   -> ダウンロード
+/api/media/{photo_id}       -> メタデータ
+/media/{photo_id}/preview   -> 表示画像
+/media/{photo_id}/original  -> ダウンロード
 ```
 
 ## TypeScript types
@@ -772,17 +771,17 @@ type Pagination struct {
 ```txt
 GET /api/albums
 GET /api/albums/{album_id}
-GET /api/albums/{album_id}/photos
-GET /media/photos/{photo_id}/thumb
-GET /media/photos/{photo_id}/preview
+GET /api/albums/{album_id}/media
+GET /media/{photo_id}/thumb
+GET /media/{photo_id}/preview
 ```
 
 後回しでよいもの:
 
 ```txt
-GET /api/photos/{photo_id}
+GET /api/media/{photo_id}
 GET /api/tags
-GET /media/photos/{photo_id}/original
+GET /media/{photo_id}/original
 ```
 
 この順番なら，Figma で作ったトップページと各アルバムページを先に再現できます．検索，編集，アップロード，認証は後からでよいです．

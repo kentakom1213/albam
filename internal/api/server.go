@@ -53,7 +53,7 @@ func (s *Server) registerDynamicRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/theme/runtime.css", s.handleRuntimeCSS)
 	mux.HandleFunc("/api/albums", s.handleListAlbums)
 	mux.HandleFunc("/api/albums/", s.handleAlbumSubroutes)
-	mux.HandleFunc("/api/photos/", s.handlePhotoSubroutes)
+	mux.HandleFunc("/api/media/", s.handlePhotoSubroutes)
 
 	mediaHandler := NewMediaHandler(
 		s.store,
@@ -62,5 +62,4 @@ func (s *Server) registerDynamicRoutes(mux *http.ServeMux) {
 		s.cfg.Media.AllowOriginalDownload,
 	)
 	mux.HandleFunc("/media/", mediaHandler.ServeHTTP)
-	mux.HandleFunc("/media/photos/", mediaHandler.ServeHTTP)
 }

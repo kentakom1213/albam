@@ -97,28 +97,17 @@ func (h *MediaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func parseMediaPath(path string) (string, VariantKind, bool) {
 	parts := strings.Split(strings.Trim(path, "/"), "/")
 
-	if len(parts) == 3 {
-		if parts[0] != "media" {
-			return "", "", false
-		}
-		if parts[1] == "" || parts[2] == "" {
-			return "", "", false
-		}
-
-		return parts[1], VariantKind(parts[2]), true
-	}
-
-	if len(parts) != 4 {
+	if len(parts) != 3 {
 		return "", "", false
 	}
-	if parts[0] != "media" || parts[1] != "photos" {
+	if parts[0] != "media" {
 		return "", "", false
 	}
-	if parts[2] == "" || parts[3] == "" {
+	if parts[1] == "" || parts[2] == "" {
 		return "", "", false
 	}
 
-	return parts[2], VariantKind(parts[3]), true
+	return parts[1], VariantKind(parts[2]), true
 }
 
 func (h *MediaHandler) serveVariant(w http.ResponseWriter, r *http.Request, photoID string, kind VariantKind) error {
@@ -139,7 +128,7 @@ func (h *MediaHandler) serveVariant(w http.ResponseWriter, r *http.Request, phot
 		return err
 	}
 
-	cacheRel := filepath.Join("photos", string(kind), photoID+".jpg")
+	cacheRel := filepath.Join("media", string(kind), photoID+".webp")
 	cachePath, err := ResolveUnderRoot(h.CacheRoot, cacheRel)
 	if err != nil {
 		return err
@@ -147,11 +136,11 @@ func (h *MediaHandler) serveVariant(w http.ResponseWriter, r *http.Request, phot
 
 	opts := optionsForVariant(kind)
 
-	if _, err := imageproc.EnsureJPEGVariant(srcPath, cachePath, opts); err != nil {
+	if _, err := imageproc.EnsureWebPVariant(srcPath, cachePath, opts); err != nil {
 		return err
 	}
 
-	w.Header().Set("Content-Type", "image/jpeg")
+	w.Header().Set("Content-Type", "image/webp")
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 
 	http.ServeFile(w, r, cachePath)
