@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/gen2brain/webp"
+	"github.com/rwcarlsen/goexif/exif"
 	xdraw "golang.org/x/image/draw"
 	_ "golang.org/x/image/webp"
 )
@@ -102,7 +103,7 @@ func decodeImage(path string) (image.Image, error) {
 	if err != nil {
 		return nil, fmt.Errorf("decode image: %w", err)
 	}
-	return img, nil
+	return applyOrientation(img, readExifOrientation(path)), nil
 }
 
 func resizeToFit(src image.Image, maxWidth, maxHeight int) image.Image {
@@ -119,6 +120,80 @@ func resizeToFit(src image.Image, maxWidth, maxHeight int) image.Image {
 	xdraw.ApproxBiLinear.Scale(dst, dst.Bounds(), src, bounds, xdraw.Over, nil)
 
 	return dst
+}
+
+func readExifOrientation(path string) int {
+	f, err := os.Open(path)
+	if err != nil {
+		return 1
+	}
+	defer f.Close()
+
+	x, err := exif.Decode(f)
+	if err != nil {
+		return 1
+	}
+
+	tag, err := x.Get(exif.Orientation)
+	if err != nil {
+		return 1
+	}
+
+	orientation, err := tag.Int(0)
+	if err != nil {
+		return 1
+	}
+	if orientation < 1 || orientation > 8 {
+		return 1
+	}
+
+	return orientation
+}
+
+func applyOrientation(src image.Image, orientation int) image.Image {
+	if orientation == 1 {
+		return src
+	}
+
+	bounds := src.Bounds()
+	srcW := bounds.Dx()
+	srcH := bounds.Dy()
+
+	dstW, dstH := srcW, srcH
+	if orientation >= 5 && orientation <= 8 {
+		dstW, dstH = srcH, srcW
+	}
+
+	dst := image.NewNRGBA(image.Rect(0, 0, dstW, dstH))
+	for y := 0; y < dstH; y++ {
+		for x := 0; x < dstW; x++ {
+			srcX, srcY := orientedSourcePoint(x, y, srcW, srcH, orientation)
+			dst.Set(x, y, src.At(bounds.Min.X+srcX, bounds.Min.Y+srcY))
+		}
+	}
+
+	return dst
+}
+
+func orientedSourcePoint(x, y, srcW, srcH, orientation int) (int, int) {
+	switch orientation {
+	case 2:
+		return srcW - 1 - x, y
+	case 3:
+		return srcW - 1 - x, srcH - 1 - y
+	case 4:
+		return x, srcH - 1 - y
+	case 5:
+		return y, x
+	case 6:
+		return y, srcH - 1 - x
+	case 7:
+		return srcW - 1 - y, srcH - 1 - x
+	case 8:
+		return srcW - 1 - y, x
+	default:
+		return x, y
+	}
 }
 
 // returns (dstW, dstH)
