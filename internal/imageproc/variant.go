@@ -33,15 +33,23 @@ func EnsureWebPVariant(srcPath string, dstPath string, opts Options) (bool, erro
 		return false, fmt.Errorf("source is directory: %s", srcPath)
 	}
 
+	orientation := readExifOrientation(srcPath)
+	srcW, srcH, err := readImageSize(srcPath)
+	if err != nil {
+		return false, err
+	}
+	srcW, srcH = orientedImageSize(srcW, srcH, orientation)
+	wantW, wantH := FitSize(srcW, srcH, opts.MaxWidth, opts.MaxHeight)
+
 	if dstInfo, err := os.Stat(dstPath); err == nil {
-		if !dstInfo.IsDir() && !dstInfo.ModTime().Before(srcInfo.ModTime()) {
+		if !dstInfo.IsDir() && !dstInfo.ModTime().Before(srcInfo.ModTime()) && cachedVariantMatches(dstPath, wantW, wantH) {
 			return false, nil
 		}
 	} else if !os.IsNotExist(err) {
 		return false, fmt.Errorf("stat cached image: %w", err)
 	}
 
-	img, err := decodeImage(srcPath)
+	img, err := decodeImage(srcPath, orientation)
 	if err != nil {
 		return false, err
 	}
@@ -92,7 +100,46 @@ func normalizeOptions(opts Options) Options {
 	return opts
 }
 
-func decodeImage(path string) (image.Image, error) {
+func readImageSize(path string) (int, int, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return 0, 0, fmt.Errorf("open source image: %w", err)
+	}
+	defer f.Close()
+
+	config, _, err := image.DecodeConfig(f)
+	if err != nil {
+		return 0, 0, fmt.Errorf("decode image metadata: %w", err)
+	}
+
+	return config.Width, config.Height, nil
+}
+
+func orientedImageSize(width, height int, orientation int) (int, int) {
+	switch orientation {
+	case 5, 6, 7, 8:
+		return height, width
+	default:
+		return width, height
+	}
+}
+
+func cachedVariantMatches(path string, wantW, wantH int) bool {
+	f, err := os.Open(path)
+	if err != nil {
+		return false
+	}
+	defer f.Close()
+
+	config, _, err := image.DecodeConfig(f)
+	if err != nil {
+		return false
+	}
+
+	return config.Width == wantW && config.Height == wantH
+}
+
+func decodeImage(path string, orientation int) (image.Image, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("open source image: %w", err)
@@ -103,7 +150,7 @@ func decodeImage(path string) (image.Image, error) {
 	if err != nil {
 		return nil, fmt.Errorf("decode image: %w", err)
 	}
-	return applyOrientation(img, readExifOrientation(path)), nil
+	return applyOrientation(img, orientation), nil
 }
 
 func resizeToFit(src image.Image, maxWidth, maxHeight int) image.Image {

@@ -79,7 +79,7 @@ func TestMediaHandlerServesWebPVariant(t *testing.T) {
 	if _, err := webp.DecodeConfig(response.Body); err != nil {
 		t.Fatalf("response is not valid webp: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(cacheRoot, "media", mediaVariantCacheVersion, "thumb", "photo-001.webp")); err != nil {
+	if _, err := os.Stat(filepath.Join(cacheRoot, "media", "thumb", "photo-001.webp")); err != nil {
 		t.Fatalf("stat cached webp: %v", err)
 	}
 }

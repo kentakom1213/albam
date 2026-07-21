@@ -33,8 +33,6 @@ const (
 	VariantOriginal VariantKind = "original"
 )
 
-const mediaVariantCacheVersion = "v2"
-
 func NewMediaHandler(store PhotoMediaStore, mediaRoot, cacheRoot string, allowOriginalDownload bool) *MediaHandler {
 	return &MediaHandler{
 		Store:                 store,
@@ -130,7 +128,7 @@ func (h *MediaHandler) serveVariant(w http.ResponseWriter, r *http.Request, phot
 		return err
 	}
 
-	cacheRel := filepath.Join("media", mediaVariantCacheVersion, string(kind), photoID+".webp")
+	cacheRel := filepath.Join("media", string(kind), photoID+".webp")
 	cachePath, err := ResolveUnderRoot(h.CacheRoot, cacheRel)
 	if err != nil {
 		return err

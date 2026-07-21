@@ -11,7 +11,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"golang.org/x/image/webp"
+	genwebp "github.com/gen2brain/webp"
+	xwebp "golang.org/x/image/webp"
 )
 
 func TestFitSize(t *testing.T) {
@@ -109,7 +110,7 @@ func TestEnsureWebPVariant(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	config, err := webp.DecodeConfig(variant)
+	config, err := xwebp.DecodeConfig(variant)
 	_ = variant.Close()
 	if err != nil {
 		t.Fatalf("decode cached webp: %v", err)
@@ -168,7 +169,78 @@ func TestEnsureWebPVariantAppliesExifOrientation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	config, err := webp.DecodeConfig(variant)
+	config, err := xwebp.DecodeConfig(variant)
+	_ = variant.Close()
+	if err != nil {
+		t.Fatalf("decode cached webp: %v", err)
+	}
+	if config.Width != 40 || config.Height != 80 {
+		t.Fatalf("cached dimensions = %dx%d, want 40x80", config.Width, config.Height)
+	}
+}
+
+func TestEnsureWebPVariantReplacesMismatchedCachedDimensions(t *testing.T) {
+	dir := t.TempDir()
+
+	srcPath := filepath.Join(dir, "src.jpg")
+	dstPath := filepath.Join(dir, "cache", "thumb.webp")
+
+	src := image.NewRGBA(image.Rect(0, 0, 80, 40))
+	for y := 0; y < 40; y++ {
+		for x := 0; x < 80; x++ {
+			src.Set(x, y, color.RGBA{B: 255, A: 255})
+		}
+	}
+
+	encoded, err := encodeJPEGWithOrientation(src, 6)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(srcPath, encoded, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.MkdirAll(filepath.Dir(dstPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	staleCache, err := os.Create(dstPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := genwebp.Encode(staleCache, src, genwebp.Options{Quality: 80}); err != nil {
+		_ = staleCache.Close()
+		t.Fatal(err)
+	}
+	if err := staleCache.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	srcInfo, err := os.Stat(srcPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cacheTime := srcInfo.ModTime().AddDate(0, 0, 1)
+	if err := os.Chtimes(dstPath, cacheTime, cacheTime); err != nil {
+		t.Fatal(err)
+	}
+
+	created, err := EnsureWebPVariant(srcPath, dstPath, Options{
+		MaxWidth:  100,
+		MaxHeight: 100,
+		Quality:   80,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !created {
+		t.Fatal("mismatched cache should be replaced")
+	}
+
+	variant, err := os.Open(dstPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	config, err := xwebp.DecodeConfig(variant)
 	_ = variant.Close()
 	if err != nil {
 		t.Fatalf("decode cached webp: %v", err)
