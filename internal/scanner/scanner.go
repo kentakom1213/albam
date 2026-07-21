@@ -75,6 +75,7 @@ func Scan(root string) ([]AssetFile, error) {
 			}
 
 			exifMeta := metadata.ReadExif(path)
+			width, height = orientedImageSize(width, height, exifMeta.Orientation)
 
 			files = append(files, AssetFile{
 				Path:                path,
@@ -132,6 +133,19 @@ func readImageSize(path string) (int, int, error) {
 	}
 
 	return config.Width, config.Height, nil
+}
+
+func orientedImageSize(width, height int, orientation *int) (int, int) {
+	if orientation == nil {
+		return width, height
+	}
+
+	switch *orientation {
+	case 5, 6, 7, 8:
+		return height, width
+	default:
+		return width, height
+	}
 }
 
 // TODO: 設定ファイルで読み込めるように
